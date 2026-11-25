@@ -25,7 +25,24 @@ export const App: React.FC = () => {
   const [isManualOpen, setIsManualOpen] = useState(false);
   const [isSetupOpen, setIsSetupOpen] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [lastMove, setLastMove] = useState<LastMoveInfo | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+    if (isMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isMenuOpen]);
 
   // Active houses array based on player count
   const activeHouses = useMemo(() => {
@@ -169,33 +186,8 @@ export const App: React.FC = () => {
             </div>
           </div>
 
-          {/* Quick Actions (Manual / Mode / Restart) */}
-          <div className="pointer-events-auto flex items-center gap-2">
-            <button
-              onClick={() => {
-                const muted = sounds.toggleMute();
-                setIsMuted(muted);
-              }}
-              className="px-3 py-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-slate-300 font-medium text-xs shadow-lg transition-colors"
-              title={isMuted ? 'Activar Sonido' : 'Silenciar'}
-            >
-              {isMuted ? '🔇' : '🔊'}
-            </button>
-
-            <button
-              onClick={() => setIsManualOpen(true)}
-              className="px-3.5 py-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-amber-300 font-bold text-xs flex items-center gap-1.5 shadow-lg transition-transform active:scale-95"
-            >
-              <span>📜</span> Manual Oficial
-            </button>
-
-            <button
-              onClick={() => setIsSetupOpen(true)}
-              className="px-3 py-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-slate-300 font-medium text-xs shadow-lg transition-colors"
-            >
-              ⚙️ Opciones
-            </button>
-
+          {/* Consolidated Menu Dropdown */}
+          <div className="pointer-events-auto relative flex items-center gap-2" ref={menuRef}>
             {legalMoveResult.canPass && gameState.status === 'playing' && !isCurrentPlayerBot && (
               <button
                 onClick={handlePass}
@@ -205,12 +197,88 @@ export const App: React.FC = () => {
               </button>
             )}
 
+            {/* Menu Trigger Button */}
             <button
-              onClick={() => handleRestart()}
-              className="px-3 py-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-slate-300 text-xs font-semibold shadow-lg transition-colors"
+              onClick={() => setIsMenuOpen((prev) => !prev)}
+              className={`px-3.5 py-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 border transition-all duration-200 text-xs font-bold flex items-center gap-2 shadow-xl ${
+                isMenuOpen
+                  ? 'border-indigo-500 text-white shadow-indigo-950/50 ring-2 ring-indigo-500/30'
+                  : 'border-slate-700 text-slate-200 hover:text-white'
+              }`}
             >
-              Reiniciar
+              <span>⚙️ Menú</span>
+              <span className={`text-[10px] text-slate-400 transition-transform duration-200 ${isMenuOpen ? 'rotate-180' : ''}`}>
+                ▼
+              </span>
             </button>
+
+            {/* Dropdown Panel */}
+            {isMenuOpen && (
+              <div className="absolute right-0 top-full mt-2 w-52 bg-slate-900/95 backdrop-blur-xl border border-slate-700/80 rounded-2xl p-2 shadow-2xl z-50 flex flex-col gap-1 animate-fade-in">
+                <button
+                  onClick={() => {
+                    setIsManualOpen(true);
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-full px-3 py-2.5 rounded-xl hover:bg-slate-800/80 text-left text-xs font-bold text-amber-300 flex items-center gap-2.5 transition-colors"
+                >
+                  <span className="text-base">📜</span>
+                  <div className="flex flex-col">
+                    <span>Manual Oficial</span>
+                    <span className="text-[10px] text-slate-400 font-normal">Reglamento v0.4</span>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setIsSetupOpen(true);
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-full px-3 py-2.5 rounded-xl hover:bg-slate-800/80 text-left text-xs font-semibold text-slate-200 flex items-center gap-2.5 transition-colors"
+                >
+                  <span className="text-base">⚙️</span>
+                  <div className="flex flex-col">
+                    <span>Configuración</span>
+                    <span className="text-[10px] text-slate-400 font-normal">Casas, modo y dificultad</span>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => {
+                    const muted = sounds.toggleMute();
+                    setIsMuted(muted);
+                  }}
+                  className="w-full px-3 py-2.5 rounded-xl hover:bg-slate-800/80 text-left text-xs font-semibold text-slate-200 flex items-center justify-between transition-colors"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-base">{isMuted ? '🔇' : '🔊'}</span>
+                    <div className="flex flex-col">
+                      <span>Efectos de Sonido</span>
+                      <span className="text-[10px] text-slate-400 font-normal">Web Audio procedural</span>
+                    </div>
+                  </div>
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${isMuted ? 'bg-rose-950 text-rose-400' : 'bg-emerald-950 text-emerald-400'}`}>
+                    {isMuted ? 'OFF' : 'ON'}
+                  </span>
+                </button>
+
+                <div className="my-1 border-t border-slate-800/80" />
+
+                <button
+                  onClick={() => {
+                    handleRestart();
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-full px-3 py-2.5 rounded-xl hover:bg-rose-950/40 text-left text-xs font-bold text-rose-400 flex items-center gap-2.5 transition-colors"
+                >
+                  <span className="text-base">🔄</span>
+                  <div className="flex flex-col">
+                    <span>Reiniciar Partida</span>
+                    <span className="text-[10px] text-slate-500 font-normal">Nueva partida limpia</span>
+                  </div>
+                </button>
+              </div>
+            )}
           </div>
         </header>
 
