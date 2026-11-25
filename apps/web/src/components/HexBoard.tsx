@@ -86,6 +86,12 @@ export const HexBoard: React.FC<HexBoardProps> = ({
         actionableCandidates.set(destKey, { action: act, type: 'climb' });
         displayCells.add(destKey);
       }
+    } else if (act.type === 'DescendStack') {
+      if (selectedPiece && selectedPiece.location === 'board' && selectedPiece.id === act.pieceId) {
+        const destKey = coordToKey(act.to);
+        actionableCandidates.set(destKey, { action: act, type: 'move' });
+        displayCells.add(destKey);
+      }
     } else if (act.type === 'SwapPiece') {
       if (selectedPiece && selectedPiece.location === 'board' && selectedPiece.id === act.pieceId) {
         const destKey = coordToKey(act.to);
