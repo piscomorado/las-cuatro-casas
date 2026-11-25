@@ -100,26 +100,64 @@ export const PIECE_SCENARIOS: Record<PieceType, DemoScenario[]> = {
   ],
   CZ: [
     {
-      title: 'Salto en línea recta del Cazador / Espadachín',
+      title: 'Saltos Diagonales y Rectilíneos en Múltiples Sentidos',
       pieceType: 'CZ',
       pieceName: 'El Cazador / Espadachín',
-      subtitle: 'Salto rectilíneo de hasta 5 pasos',
-      description: 'Salta en línea recta por encima de una pieza contigua, pudiendo recorrer de 2 hasta 5 casillas si la línea recta lo permite.',
-      ruleCallout: 'Cualquier pila de altura 2 o más lo bloquea por completo. No puede girar en su trayectoria.',
+      subtitle: '6 sentidos de salto posibles (diagonales y rectos)',
+      description: 'El Cazador salta en línea recta a lo largo de cualquiera de los 6 ejes hexagonales. Salta obligatoriamente por encima de una ficha contigua y aterriza en la casilla vacía inmediata.',
+      ruleCallout: '⚠️ Salto Estricto: Jamás salta casillas vacías (espacio aéreo). Debe haber una ficha ocupada debajo del salto, y cualquier pila de altura 2 lo bloquea.',
       baseHexes: [
-        { q: -2, r: 0, label: 'Inicio' },
-        { q: -1, r: 0, pieceType: 'EX', house: 'blue', label: 'Obstáculo' },
-        { q: 0, r: 0, isTarget: true, label: '2 pasos' },
-        { q: 1, r: 0, isTarget: true, label: '3 pasos' },
-        { q: 2, r: 0, isTarget: true, label: '4 pasos (Máx 5)' },
-        { q: -1, r: 1, pieceType: 'SO', house: 'green', label: 'Conexión' },
-        { q: 0, r: 1, pieceType: 'GI', house: 'amber', label: 'Conexión' },
+        { q: 0, r: 0, label: 'Cazador' },
+        // Diagonal Noreste (+1, -1)
+        { q: 1, r: -1, pieceType: 'EX', house: 'blue', label: 'Diag. NE' },
+        { q: 2, r: -2, isTarget: true, label: 'Destino NE' },
+
+        // Diagonal Sureste (0, +1)
+        { q: 0, r: 1, pieceType: 'GI', house: 'amber', label: 'Diag. SE' },
+        { q: 0, r: 2, isTarget: true, label: 'Destino SE' },
+
+        // Eje Recto Este (+1, 0)
+        { q: 1, r: 0, pieceType: 'BS', house: 'green', label: 'Eje Este' },
+        { q: 2, r: 0, isTarget: true, label: 'Destino Este' },
+
+        // Diagonal Noroeste (0, -1)
+        { q: 0, r: -1, pieceType: 'SO', house: 'blue', label: 'Diag. NO' },
+        { q: 0, r: -2, isTarget: true, label: 'Destino NO' },
       ],
       waypoints: [
-        { q: -2, r: 0, stepLabel: 'Toma impulso en su casilla' },
-        { q: 1, r: 0, stepLabel: '¡Salta 3 casillas en línea recta por encima de la pieza!', isJumping: true },
-        { q: 2, r: 0, stepLabel: 'O extiende el ataque hasta 5 pasos si hay apoyo', isJumping: true },
-        { q: -2, r: 0, stepLabel: 'Retorna a la posición inicial' },
+        { q: 0, r: 0, stepLabel: 'En posición central: evalúa 4 sentidos posibles' },
+        { q: 2, r: -2, stepLabel: '1. ¡Salto Diagonal Noreste! Salta sobre la ficha azul', isJumping: true },
+        { q: 0, r: 0, stepLabel: 'Regresa al centro táctico' },
+        { q: 0, r: 2, stepLabel: '2. ¡Salto Diagonal Sureste! Salta sobre el Gigante ámbar', isJumping: true },
+        { q: 0, r: 0, stepLabel: 'Regresa al centro táctico' },
+        { q: 2, r: 0, stepLabel: '3. ¡Salto Rectilíneo Este! Salta sobre la Bestia verde', isJumping: true },
+        { q: 0, r: 0, stepLabel: 'Regresa al centro táctico' },
+        { q: 0, r: -2, stepLabel: '4. ¡Salto Diagonal Noroeste! Salta sobre el Soberano', isJumping: true },
+        { q: 0, r: 0, stepLabel: 'Ciclo multi-direccional completado' },
+      ],
+    },
+    {
+      title: 'Regla de Salto Estricto vs Casillas Vacías',
+      pieceType: 'CZ',
+      pieceName: 'El Cazador / Espadachín',
+      subtitle: 'Prohibido saltar sobre huecos o caminar en falso',
+      description: 'Si una casilla contigua está vacía, el Cazador NO puede saltar en esa dirección porque no hay ficha sobre la que impulsarse.',
+      ruleCallout: 'El Cazador no es un corredor libre: solo salta si hay una ficha ocupada contigua. No puede volar sobre casillas vacías.',
+      baseHexes: [
+        { q: 0, r: 0, label: 'Cazador' },
+        // Lado con ficha: Salto legal
+        { q: 1, r: 0, pieceType: 'EX', house: 'green', label: 'Con ficha (Legal)' },
+        { q: 2, r: 0, isTarget: true, label: 'Aterrizaje' },
+        // Lado vacío: Salto bloqueado
+        { q: -1, r: 0, label: 'Vacía (Bloqueado)' },
+        // Conexión
+        { q: 0, r: 1, pieceType: 'SO', house: 'amber', label: 'Colonia' },
+        { q: 1, r: 1, pieceType: 'GI', house: 'blue', label: 'Colonia' },
+      ],
+      waypoints: [
+        { q: 0, r: 0, stepLabel: 'Hacia el Oeste hay casilla vacía: NO puede saltar' },
+        { q: 2, r: 0, stepLabel: 'Hacia el Este hay una ficha: ¡Salto legal concedido!', isJumping: true },
+        { q: 0, r: 0, stepLabel: 'Retorna a la posición de origen' },
       ],
     },
   ],
@@ -320,12 +358,23 @@ export const PieceMovementDemo: React.FC<PieceMovementDemoProps> = ({
 
   const hexPolygonPoints = getHexCornerPoints(0, 0, DEMO_HEX_SIZE - 2);
 
-  // Jump arc path if currently jumping
-  const startWaypoint = activeScenario.waypoints[0];
-  const startPos = hexToPixel(startWaypoint, DEMO_HEX_SIZE);
-  const midX = (startPos.x + movingPos.x) / 2;
-  const midY = (startPos.y + movingPos.y) / 2 - (waypoint.isJumping ? 40 : 15);
-  const arcPath = `M ${startPos.x} ${startPos.y} Q ${midX} ${midY} ${movingPos.x} ${movingPos.y}`;
+  // Jump arc path if currently jumping or moving
+  const prevWaypoint = currentStep > 0 ? activeScenario.waypoints[currentStep - 1] : activeScenario.waypoints[0];
+  const originCoord = waypoint.isJumping ? activeScenario.waypoints[0] : prevWaypoint;
+  const startPos = hexToPixel(originCoord, DEMO_HEX_SIZE);
+  const dx = movingPos.x - startPos.x;
+  const dy = movingPos.y - startPos.y;
+  const dist = Math.hypot(dx, dy);
+
+  let arcPath = '';
+  if (dist > 4) {
+    const nx = -dy / dist;
+    const ny = dx / dist;
+    const bow = waypoint.isJumping ? 28 : 12;
+    const midX = (startPos.x + movingPos.x) / 2 + nx * bow * 0.3;
+    const midY = (startPos.y + movingPos.y) / 2 + ny * bow * 0.3 - (waypoint.isJumping ? 30 : 10);
+    arcPath = `M ${startPos.x} ${startPos.y} Q ${midX} ${midY} ${movingPos.x} ${movingPos.y}`;
+  }
 
   const PIECES_LIST: { code: PieceType; label: string; icon: string }[] = [
     { code: 'SO', label: 'Soberano', icon: '👑' },
