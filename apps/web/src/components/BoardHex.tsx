@@ -60,7 +60,7 @@ export const BoardHex: React.FC<BoardHexProps> = ({
     <g
       transform={`translate(${x}, ${y})`}
       onClick={onClick}
-      className={`cursor-pointer hex-animated ${topPiece ? 'animate-piece-drop' : ''}`}
+      className="cursor-pointer"
     >
       {/* 1. Base Empty Slot */}
       {stackHeight === 0 && (
