@@ -1,7 +1,7 @@
 import React from 'react';
 import { House, Piece } from '@lcch/engine';
 import { getHexCornerPoints, HEX_SIZE } from '../utils/hexMath';
-import { PieceIcon } from './PieceIcon';
+import { SvgPieceIcon } from './PieceIcon';
 
 export interface BoardHexProps {
   q: number;
@@ -12,6 +12,7 @@ export interface BoardHexProps {
   isCandidate?: boolean;
   isSelected?: boolean;
   candidateType?: 'place' | 'move' | 'swap' | 'exile' | 'climb';
+  candidatePieceType?: Piece['type']; // For previewing piece icon on empty candidate hex
   onClick?: (e: React.MouseEvent) => void;
 }
 
@@ -30,6 +31,7 @@ export const BoardHex: React.FC<BoardHexProps> = ({
   isCandidate = false,
   isSelected = false,
   candidateType = 'place',
+  candidatePieceType,
   onClick,
 }) => {
   const stackHeight = pieces.length;
@@ -62,13 +64,26 @@ export const BoardHex: React.FC<BoardHexProps> = ({
     >
       {/* 1. Base Empty Slot */}
       {stackHeight === 0 && (
-        <polygon
-          points={hexPoints}
-          fill={candStyle ? candStyle.fill : 'rgba(30, 41, 59, 0.3)'}
-          stroke={candStyle ? candStyle.stroke : '#334155'}
-          strokeWidth={candStyle ? candStyle.strokeWidth : 1}
-          strokeDasharray={candStyle?.dash}
-        />
+        <>
+          <polygon
+            points={hexPoints}
+            fill={candStyle ? candStyle.fill : 'rgba(30, 41, 59, 0.3)'}
+            stroke={candStyle ? candStyle.stroke : '#334155'}
+            strokeWidth={candStyle ? candStyle.strokeWidth : 1}
+            strokeDasharray={candStyle?.dash}
+          />
+          {/* Ghost preview of candidate placement */}
+          {isCandidate && candidatePieceType && (
+            <SvgPieceIcon
+              type={candidatePieceType}
+              x={-18}
+              y={-18}
+              size={36}
+              white={true}
+              className="opacity-70"
+            />
+          )}
+        </>
       )}
 
       {/* 2. Visual Stacking Elevation */}
@@ -126,17 +141,16 @@ export const BoardHex: React.FC<BoardHexProps> = ({
             );
           })()}
 
-          {/* Official Emblem Image */}
-          <g transform="translate(-16, -16)" pointerEvents="none">
-            <PieceIcon
-              type={topPiece.type}
-              size={32}
-              white={true}
-              className="drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]"
-            />
-          </g>
+          {/* Official Emblem Image from manual v0.4 (Embedded Base64) */}
+          <SvgPieceIcon
+            type={topPiece.type}
+            x={-20}
+            y={-20}
+            size={40}
+            white={true}
+          />
 
-          {/* Stack count badge */}
+          {/* Stack count badge if height > 1 */}
           {stackHeight > 1 && (
             <g transform="translate(14, -14)" pointerEvents="none">
               <circle cx="0" cy="0" r="9" fill="#0f172a" stroke="#cbd5e1" strokeWidth="1.5" />
@@ -168,12 +182,12 @@ export const BoardHex: React.FC<BoardHexProps> = ({
         />
       )}
 
-      {/* Pulsing Dot in Center of Valid Candidate Cell */}
+      {/* Candidate Center Dot */}
       {isCandidate && (
         <circle
           cx="0"
           cy={stackHeight > 1 ? -6 : 0}
-          r={stackHeight === 0 ? 6 : 4}
+          r={stackHeight === 0 && !candidatePieceType ? 6 : 4}
           fill={candStyle!.stroke}
           pointerEvents="none"
         />
