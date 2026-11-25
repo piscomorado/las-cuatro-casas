@@ -103,4 +103,30 @@ describe('Option A: Regla de Apertura (3 fichas iniciales con Soberano obligator
     const hasMoveActions = legalPlay.actions.some((a) => a.type === 'MovePiece');
     expect(hasMoveActions).toBe(true);
   });
+
+  it('guarantees that every house places 3 pieces even with random starting house index', () => {
+    // Start with startingHouseIndex = 3 (Amber in 4-house game)
+    let state = initGame({ startingHouseIndex: 3 });
+    const startingHouse = state.aliveHouses[0];
+    expect(startingHouse).toBe('amber');
+
+    // Simulate 12 setup placements total (3 per house * 4 houses)
+    for (let round = 0; round < 4; round++) {
+      const activeHouse = state.aliveHouses[state.currentHouseIndex]!;
+      expect(state.phase).toBe('setup');
+      for (let p = 0; p < 3; p++) {
+        expect(state.aliveHouses[state.currentHouseIndex]).toBe(activeHouse);
+        const legal = getLegalMoves(state, activeHouse);
+        expect(legal.actions.length).toBeGreaterThan(0);
+        state = applyAction(state, legal.actions[0]!).state;
+      }
+      expect(state.setupCount[activeHouse]).toBe(3);
+    }
+
+    // After all 4 houses place 3 pieces, phase transitions to 'play'
+    expect(state.phase).toBe('play');
+    for (const h of state.aliveHouses) {
+      expect(state.setupCount[h]).toBe(3);
+    }
+  });
 });

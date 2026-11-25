@@ -42,8 +42,12 @@ export function initGame(options?: {
     startingIdx = Math.floor(Math.random() * activeHouses.length);
   }
 
+  const orderedHouses = startingIdx > 0
+    ? [...activeHouses.slice(startingIdx), ...activeHouses.slice(0, startingIdx)]
+    : [...activeHouses];
+
   const pieces: Record<string, Piece> = {};
-  for (const house of activeHouses) {
+  for (const house of orderedHouses) {
     let pieceIdx = 0;
     for (const [type, count] of COMPOSITION) {
       for (let i = 0; i < count; i++) {
@@ -81,9 +85,9 @@ export function initGame(options?: {
     phase: 'setup',
     setupCount,
     turn: 0,
-    activeHouses,
-    aliveHouses: [...activeHouses],
-    currentHouseIndex: startingIdx,
+    activeHouses: orderedHouses,
+    aliveHouses: [...orderedHouses],
+    currentHouseIndex: 0,
     ownTurns,
     pieces,
     board: {},
@@ -440,15 +444,24 @@ export function applyAction(state: GameState, action: Action): ActionResult {
       // Same house continues placing its 3 initial pieces
       nextHouseIndex = state.currentHouseIndex;
     } else {
-      // House finished its 3 setup placements, move to next house
-      const nextIdx = state.currentHouseIndex + 1;
-      if (nextIdx < nextAliveHouses.length) {
-        nextHouseIndex = nextIdx;
-      } else {
+      // House finished its setup placements.
+      // Check if ALL alive houses have completed their initial setup placements!
+      const allHousesDone = nextAliveHouses.every(
+        (h) => (nextSetupCount[h] ?? 0) >= state.config.initialSetupPiecesCount
+      );
+
+      if (allHousesDone) {
         // All houses finished setup phase! Transition to 'play' phase
         nextPhase = 'play';
-        nextHouseIndex = 0; // Rotate starting play phase
+        nextHouseIndex = 0; // Starting house begins play phase
         events.push({ type: 'SetupCompleted' });
+      } else {
+        // Find next house in circle that still needs to place its setup pieces
+        let nextIdx = (state.currentHouseIndex + 1) % nextAliveHouses.length;
+        while ((nextSetupCount[nextAliveHouses[nextIdx]] ?? 0) >= state.config.initialSetupPiecesCount) {
+          nextIdx = (nextIdx + 1) % nextAliveHouses.length;
+        }
+        nextHouseIndex = nextIdx;
       }
     }
   } else {
