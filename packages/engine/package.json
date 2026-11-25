@@ -2,8 +2,16 @@
   "name": "@lcch/engine",
   "version": "0.1.0",
   "description": "Deterministic rules engine for Las Cuatro Casas",
+  "type": "module",
   "main": "./dist/index.js",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
   "scripts": {
     "build": "tsc -b",
     "test": "vitest run",
@@ -12,9 +20,10 @@
     "typecheck": "tsc --noEmit",
     "simulate": "tsx cli/simulate.ts"
   },
+  "dependencies": {},
   "devDependencies": {
     "@types/node": "^20.14.0",
-    "@vitest/coverage-v8": "^2.1.9",
+    "@vitest/coverage-v8": "2.1.9",
     "fast-check": "^3.19.0",
     "tsx": "^4.16.0",
     "typescript": "^5.5.0",
