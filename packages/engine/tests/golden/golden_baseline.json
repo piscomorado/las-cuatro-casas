@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0.0",
+  "source": "manual_v0_4_page_5",
+  "reference_sample": {
+    "games": 50,
+    "decided": 48,
+    "decided_pct": 96.0,
+    "wins_by_house": {
+      "amber": 14,
+      "red": 12,
+      "blue": 12,
+      "green": 10
+    },
+    "mean_actions": 130,
+    "exile_games": 28
+  }
+}

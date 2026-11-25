@@ -1,0 +1,477 @@
+código fuente las cuatro casas 
+
+import random, time
+from collections import deque, Counter
+
+DIRS=((1,0),(1,-1),(0,-1),(-1,0),(-1,1),(0,1))
+DIRSET=set(DIRS)
+ORDER=(0,1,2,3)
+HNAMES=('Roja','Azul','Verde','Ámbar')
+COMPO=(('SO',1),('EX',3),('CZ',3),('BS',2),('GI',2),('HE',1),('NI',1))
+CAP=400; SAMPLE=50; NOISE=6.0
+
+for i in range(6):
+    d=DIRS[i]
+    assert (DIRS[(i+1)%6][0]-d[0],DIRS[(i+1)%6][1]-d[1]) in DIRSET
+
+def adjacent(c1,c2):
+    return (c1[0]-c2[0],c1[1]-c2[1]) in DIRSET
+
+def one_hive(cells):
+    if not cells: return True
+    it=iter(cells); start=next(it)
+    seen={start}; dq=deque([start]); n=1
+    while dq:
+        c=dq.popleft()
+        for d in DIRS:
+            nb=(c[0]+d[0],c[1]+d[1])
+            if nb in cells and nb not in seen:
+                seen.add(nb); n+=1; dq.append(nb)
+    return n==len(cells)
+
+class Game:
+    __slots__=('rng','cells','F','so_id','alive','placed','own_turns','pending','ptr','nacts',
+               'fallen','winner','draw','m','rep','fidc','cur','strict')
+    def __init__(self,seed):
+        self.rng=random.Random(seed)
+        self.cells={}; self.F={}; self.so_id={}; self.fidc=0
+        for h in ORDER:
+            for t,k in COMPO:
+                for _ in range(k):
+                    fid=self.fidc; self.fidc+=1
+                    self.F[fid]=[h,t,'R',None,False]
+                    if t=='SO': self.so_id[h]=fid
+        self.alive=set(ORDER)
+        self.placed={h:0 for h in ORDER}
+        self.own_turns={h:0 for h in ORDER}
+        self.pending=[]; self.ptr=0; self.nacts=0
+        self.fallen=[]; self.winner=None; self.draw=None
+        self.m=dict(destierros=0,reingresos=0,perdidos=0,swaps=0,bs=0,cz=0,ex=0,copias=0,pases=0,max_siege=0)
+        self.rep={}; self.cur=0; self.strict=False
+
+    def free_nb(self,c):
+        C=self.cells; n=0
+        for d in DIRS:
+            if (c[0]+d[0],c[1]+d[1]) not in C: n+=1
+        return n
+
+    def frontier(self):
+        fr=set(); C=self.cells
+        for c in C:
+            for d in DIRS:
+                nb=(c[0]+d[0],c[1]+d[1])
+                if nb not in C: fr.add(nb)
+        return fr
+
+    def gate_ok(self,o,d):
+        i=DIRS.index((d[0]-o[0],d[1]-o[1]))
+        L=(o[0]+DIRS[(i+1)%6][0],o[1]+DIRS[(i+1)%6][1])
+        R=(o[0]+DIRS[(i+5)%6][0],o[1]+DIRS[(i+5)%6][1])
+        C=self.cells
+        return not (L in C and R in C)
+
+    def touches_rest(self,c,exc):
+        C=self.cells
+        for d in DIRS:
+            nb=(c[0]+d[0],c[1]+d[1])
+            if nb in C and nb!=exc: return True
+        return False
+
+    def articulation(self):
+        C=self.cells; idx={}; low={}; art=set(); cnt=0
+        for root in C:
+            if root in idx: continue
+            idx[root]=low[root]=cnt; cnt+=1
+            root_children=0
+            stack=[[root,None,0]]
+            while stack:
+                frame=stack[-1]; node,parent,ni=frame
+                if ni<6:
+                    frame[2]+=1
+                    d=DIRS[ni]
+                    nb=(node[0]+d[0],node[1]+d[1])
+                    if nb not in C or nb==parent: continue
+                    if nb in idx:
+                        if idx[nb]<low[node]: low[node]=idx[nb]
+                    else:
+                        idx[nb]=low[nb]=cnt; cnt+=1
+                        stack.append([nb,node,0])
+                else:
+                    stack.pop()
+                    if parent is not None:
+                        if low[node]<low[parent]: low[parent]=low[node]
+                        if low[node]>=idx[parent] and parent!=root: art.add(parent)
+                        if parent==root: root_children+=1
+            if root_children>=2: art.add(root)
+        return art
+
+    def gen_placements(self,h,force_so):
+        res=[fid for fid,f in self.F.items() if f[0]==h and f[2]=='R']
+        if not res: return []
+        if force_so: res=[self.so_id[h]]
+        acts=[]
+        if self.placed[h]==0:
+            if not self.cells:
+                for fid in res: acts.append(('PL',fid,(0,0),None))
+                return acts
+            for c in self.frontier():
+                for fid in res: acts.append(('PL',fid,c,None))
+            return acts
+        okcells=[]; C=self.cells
+        for c in self.frontier():
+            own=0; bad=False
+            for d in DIRS:
+                nb=(c[0]+d[0],c[1]+d[1]); st=C.get(nb)
+                if st:
+                    tf=self.F[st[-1]]
+                    if tf[0]==h: own+=1
+                    elif tf[0] in self.alive: bad=True
+            if own>=1 and not bad: okcells.append(c)
+        for c in okcells:
+            for fid in res: acts.append(('PL',fid,c,None))
+        return acts
+
+    def slides1(self,fid,loc,lift,acts,kind,aux):
+        if not lift: return
+        for d in DIRS:
+            nb=(loc[0]+d[0],loc[1]+d[1])
+            if nb in self.cells: continue
+            if not self.gate_ok(loc,nb): continue
+            if not self.touches_rest(nb,loc): continue
+            acts.append((kind,fid,nb,aux))
+
+    def explorer(self,fid,loc,acts,kind,aux):
+        C=self.cells; seen={loc}; dq=deque([loc])
+        while dq:
+            c=dq.popleft()
+            for d in DIRS:
+                nb=(c[0]+d[0],c[1]+d[1])
+                if nb in C or nb in seen: continue
+                if not self.gate_ok(c,nb): continue
+                if not self.touches_rest(nb,loc): continue
+                seen.add(nb); acts.append((kind,fid,nb,aux)); dq.append(nb)
+
+    def cz(self,fid,loc,acts,kind,aux):
+        C=self.cells
+        for dx,dy in DIRS:
+            over=0
+            for step in range(1,5):
+                c=(loc[0]+dx*step,loc[1]+dy*step)
+                st=C.get(c)
+                if st:
+                    if len(st)==1:
+                        over+=1
+                        if over>1: break
+                    else: break
+                else:
+                    if self.touches_rest(c,loc): acts.append((kind,fid,c,aux))
+
+    def bs(self,fid,loc,acts,kind,aux):
+        C=self.cells
+        for dx,dy in DIRS:
+            step=1; jumped=0
+            while True:
+                c=(loc[0]+dx*step,loc[1]+dy*step)
+                if c in C: jumped+=1; step+=1; continue
+                if jumped>=1 and self.touches_rest(c,loc): acts.append((kind,fid,c,aux))
+                break
+
+    def climb(self,fid,loc,acts,kind,aux):
+        for d in DIRS:
+            nb=(loc[0]+d[0],loc[1]+d[1])
+            if nb in self.cells: acts.append((kind,fid,nb,aux))
+
+    def from_top(self,fid,loc,acts):
+        C=self.cells
+        for d in DIRS:
+            nb=(loc[0]+d[0],loc[1]+d[1])
+            st=C.get(nb)
+            if st: acts.append(('GIT',fid,nb,None))
+            elif self.touches_rest(nb,None): acts.append(('GID',fid,nb,None))
+
+    def gen_moves(self,h):
+        art=self.articulation()
+        acts=[]; F=self.F; C=self.cells
+        for fid,f in F.items():
+            if f[0]!=h or f[2]!='B': continue
+            loc=f[3]; st=C[loc]
+            if st[-1]!=fid: continue
+            t=f[1]; lift=(len(st)>=2) or (loc not in art)
+            if t=='SO': self.slides1(fid,loc,lift,acts,'SL',None)
+            elif t=='EX':
+                if lift: self.explorer(fid,loc,acts,'EXM',None)
+            elif t=='CZ':
+                if lift: self.cz(fid,loc,acts,'CZM',None)
+            elif t=='BS':
+                if lift: self.bs(fid,loc,acts,'BSM',None)
+            elif t=='GI':
+                if lift:
+                    self.slides1(fid,loc,lift,acts,'SL',None)
+                    self.climb(fid,loc,acts,'GIC',None)
+            elif t=='HE':
+                if len(st)>=2: self.from_top(fid,loc,acts)
+                elif lift:
+                    for d in DIRS:
+                        nb=(loc[0]+d[0],loc[1]+d[1]); stn=C.get(nb)
+                        if not stn: continue
+                        tt=self.F[stn[-1]][1]
+                        if tt=='NI': continue
+                        aux=(tt,nb)
+                        if tt in ('SO','HE','GI'): self.slides1(fid,loc,lift,acts,'HECP',aux)
+                        elif tt=='EX': self.explorer(fid,loc,acts,'HECP',aux)
+                        elif tt=='CZ': self.cz(fid,loc,acts,'HECP',aux)
+                        elif tt=='BS': self.bs(fid,loc,acts,'HECP',aux)
+                        if tt=='GI': self.climb(fid,loc,acts,'HECP',aux)
+            elif t=='NI':
+                if len(st)>=2: self.from_top(fid,loc,acts)
+                else:
+                    if lift: self.slides1(fid,loc,lift,acts,'SL',None)
+                    for d in DIRS:
+                        nb=(loc[0]+d[0],loc[1]+d[1]); stn=C.get(nb)
+                        if not stn: continue
+                        acts.append(('SW',fid,nb,None))
+                        tf=self.F[stn[-1]]
+                        if len(stn)==1 and tf[0]!=h and tf[0] in self.alive and tf[1]!='SO' and nb not in art:
+                            acts.append(('DES',fid,nb,tf[0]))
+        return acts
+
+    def gen_actions(self,h):
+        so=self.so_id[h]
+        if self.F[so][2]!='B':
+            return self.gen_placements(h,self.own_turns[h]>=4)
+        acts=self.gen_placements(h,False)
+        acts.extend(self.gen_moves(h))
+        return acts
+
+    def apply(self,act):
+        kind=act[0]
+        if kind=='PASS':
+            self.m['pases']+=1
+        else:
+            fid=act[1]; f=self.F[fid]; h=f[0]
+            if kind=='PL':
+                c=act[2]
+                assert f[2]=='R' and c not in self.cells
+                self.cells[c]=[fid]; f[2]='B'; f[3]=c
+                self.placed[h]+=1
+                if f[4]: self.m['reingresos']+=1
+            elif kind=='SW':
+                a=f[3]; b=act[2]
+                sta=self.cells[a]
+                assert sta[-1]==fid and len(sta)==1
+                sta.pop(); del self.cells[a]
+                stb=self.cells[b]; ga=stb.pop()
+                if not stb: del self.cells[b]
+                self.cells.setdefault(a,[]).append(ga); self.F[ga][3]=a
+                self.cells.setdefault(b,[]).append(fid); f[3]=b
+                self.m['swaps']+=1
+            elif kind=='DES':
+                b=act[2]; stb=self.cells[b]
+                assert len(stb)==1
+                tfid=stb[0]; tf=self.F[tfid]
+                del self.cells[b]
+                tf[2]='D'; tf[3]=None; tf[4]=True
+                self.pending.append([tfid,tf[0],self.own_turns[tf[0]]+1])
+                self.m['destierros']+=1
+            else:
+                a=f[3]; d=act[2]
+                sta=self.cells[a]
+                assert sta[-1]==fid
+                sta.pop()
+                if not sta: del self.cells[a]
+                self.cells.setdefault(d,[]).append(fid)
+                f[3]=d
+                if kind=='BSM': self.m['bs']+=1
+                elif kind=='CZM': self.m['cz']+=1
+                elif kind=='EXM': self.m['ex']+=1
+                elif kind=='HECP': self.m['copias']+=1
+        self.siege_check()
+        if self.pending:
+            done=[]
+            for p in self.pending:
+                if p[1]==self.cur and p[2]==self.own_turns[self.cur]:
+                    if p[1] in self.alive: self.F[p[0]][2]='R'
+                    else:
+                        self.F[p[0]][2]='X'; self.m['perdidos']+=1
+                    done.append(p)
+            for p in done: self.pending.remove(p)
+        key=(tuple(sorted((c,tuple(st)) for c,st in self.cells.items())),self.cur)
+        self.rep[key]=self.rep.get(key,0)+1
+        if self.rep[key]>=3 and self.winner is None and self.draw is None:
+            self.draw='rep'
+
+    def siege_check(self):
+        falls=[]
+        for h in list(self.alive):
+            loc=self.F[self.so_id[h]][3]
+            if loc is None: continue
+            occ=0
+            for d in DIRS:
+                if (loc[0]+d[0],loc[1]+d[1]) in self.cells: occ+=1
+            if occ>self.m['max_siege']: self.m['max_siege']=occ
+            if occ==6: falls.append(h)
+        for h in falls:
+            self.alive.discard(h); self.fallen.append(h)
+            for f in self.F.values():
+                if f[0]==h and f[2]=='R': f[2]='X'
+            for p in self.pending[:]:
+                if p[1]==h:
+                    self.F[p[0]][2]='X'; self.m['perdidos']+=1
+                    self.pending.remove(p)
+            self.rep.clear()
+        if falls:
+            if len(self.alive)==1: self.winner=next(iter(self.alive))
+            elif not self.alive: self.draw='all'
+
+def siege_delta(g,h,cell,fill,sos,freeb,skip_self=False):
+    s=0.0
+    for hh,loc in sos:
+        if skip_self and hh==h: continue
+        if not adjacent(cell,loc): continue
+        d=-1.0 if fill else 1.0
+        if hh==h:
+            s+=3.0*d
+            if fill and freeb[hh]<=1: s-=8.0
+        else:
+            s-=2.5*d
+            if fill and freeb[hh]<=1: s+=4.0
+    return s
+
+def score(g,a,h,sos,freeb):
+    kind=a[0]
+    if kind=='PASS': return 0.0
+    fid=a[1]; f=g.F[fid]; s=0.0
+    if kind=='PL':
+        c=a[2]; own=0; pot=0
+        C=g.cells; F=g.F
+        for dd in DIRS:
+            nb=(c[0]+dd[0],c[1]+dd[1]); st=C.get(nb)
+            if st:
+                if F[st[-1]][0]==h: own+=1
+                continue
+            touch_own=False; touch_enemy=False
+            for d2 in DIRS:
+                n2=(nb[0]+d2[0],nb[1]+d2[1]); st2=C.get(n2)
+                if st2:
+                    th=F[st2[-1]][0]
+                    if th==h: touch_own=True
+                    elif th in g.alive: touch_enemy=True
+            if touch_own and not touch_enemy: pot+=1
+        s=0.15*own+0.25*pot+0.12*g.free_nb(c)+siege_delta(g,h,c,True,sos,freeb)
+        if g.own_turns[h]<=3: s+=0.8
+        if f[1]=='SO' and g.own_turns[h]>=3: s+=1.5
+        return s
+    if kind=='DES':
+        c=a[2]
+        s=2.5+siege_delta(g,h,c,False,sos,freeb)
+        tf=g.F[g.cells[c][0]]
+        if tf[1] in ('EX','CZ','BS'): s+=0.3
+        return s
+    if kind=='SW':
+        b=a[2]; ac=f[3]
+        ga=g.F[g.cells[b][-1]]
+        if ga[1]=='SO' and ga[0] in g.alive:
+            sh=ga[0]; fa=g.free_nb(ac); fb=g.free_nb(b); d=fa-fb
+            if sh==h:
+                s=3.0*d
+                if fa==0: s-=8.0
+            else:
+                s=0.8-2.5*d
+                if fa==0: s+=4.0
+        else:
+            s=1.2
+        if len(g.cells[b])>=2: s-=0.2
+        return s
+    d=a[2]; orig=f[3]
+    if f[1]=='SO':
+        s=3.0*(g.free_nb(d)+1-g.free_nb(orig))
+        if g.free_nb(d)==0: s-=8.0
+        s+=siege_delta(g,h,d,True,sos,freeb,skip_self=True)
+        s+=siege_delta(g,h,orig,False,sos,freeb,skip_self=True)
+        return s
+    if d in g.cells:
+        top=g.F[g.cells[d][-1]]
+        if top[1]=='SO' and top[0] in g.alive:
+            s += 2.0 if top[0]!=h else -3.0
+    else:
+        s=0.12*g.free_nb(d)+siege_delta(g,h,d,True,sos,freeb)
+    if kind not in ('GIT','GID') and len(g.cells[orig])==1:
+        s+=siege_delta(g,h,orig,False,sos,freeb)
+    return s
+
+def play(seed,strict=False):
+    g=Game(seed); g.strict=strict
+    while g.winner is None and g.draw is None and g.nacts<CAP:
+        h=ORDER[g.ptr%4]; g.ptr+=1
+        if h not in g.alive: continue
+        g.cur=h; g.own_turns[h]+=1
+        acts=g.gen_actions(h)
+        if not acts:
+            act=('PASS',None,None,None)
+        else:
+            if len(acts)>SAMPLE: acts=g.rng.sample(acts,SAMPLE)
+            sos=[(hh,g.F[g.so_id[hh]][3]) for hh in g.alive if g.F[g.so_id[hh]][3] is not None]
+            freeb={hh:g.free_nb(loc) for hh,loc in sos}
+            best=None; bs=-1e18
+            for a in acts:
+                s=score(g,a,h,sos,freeb)+g.rng.uniform(0,NOISE)
+                if s>bs: bs=s; best=a
+            act=best
+        g.apply(act)
+        g.nacts+=1
+        assert one_hive(g.cells), 'formacion dividida'
+    if g.winner is not None: r='win'
+    elif g.draw=='all': r='empate_total'
+    elif g.draw=='rep': r='empate_rep'
+    else: r='empate_tope'
+    return {'seed':seed,'res':r,'winner':g.winner,'nacts':g.nacts,'falls':tuple(g.fallen),'m':g.m}
+
+TIMELINE=[]
+def play_instr(seed):
+    g=Game(seed)
+    nf=0; falls_at=[]; last_prog=0; last_place=0
+    while g.winner is None and g.draw is None and g.nacts<CAP:
+        h=ORDER[g.ptr%4]; g.ptr+=1
+        if h not in g.alive: continue
+        g.cur=h; g.own_turns[h]+=1
+        acts=g.gen_actions(h)
+        if not acts: act=('PASS',None,None,None)
+        else:
+            if len(acts)>SAMPLE: acts=g.rng.sample(acts,SAMPLE)
+            sos=[(hh,g.F[g.so_id[hh]][3]) for hh in g.alive if g.F[g.so_id[hh]][3] is not None]
+            freeb={hh:g.free_nb(loc) for hh,loc in sos}
+            best=None; bs=-1e18
+            for a in acts:
+                s=score(g,a,h,sos,freeb)+g.rng.uniform(0,NOISE)
+                if s>bs: bs=s; best=a
+            act=best
+        pre={}
+        for hh in g.alive:
+            loc=g.F[g.so_id[hh]][3]
+            if loc is not None: pre[hh]=6-g.free_nb(loc)
+        fue_pl=(act[0]=='PL')
+        g.apply(act); g.nacts+=1; anum=g.nacts
+        if fue_pl: last_place=anum
+        prog=False
+        for hh in g.alive:
+            loc=g.F[g.so_id[hh]][3]
+            if loc is None: continue
+            if hh in pre and (6-g.free_nb(loc))>pre[hh]: prog=True
+        if len(g.fallen)>nf:
+            falls_at.append(anum); nf=len(g.fallen); prog=True
+        if prog: last_prog=anum
+    fin=[6-g.free_nb(g.F[g.so_id[hh]][3]) for hh in g.alive if g.F[g.so_id[hh]][3] is not None]
+    if g.winner is not None: r='win'
+    elif g.draw=='all': r='empate_total'
+    elif g.draw=='rep': r='empate_rep'
+    else: r='empate_tope'
+    return dict(seed=seed,res=r,winner=g.winner,nacts=g.nacts,falls=tuple(g.fallen),
+                falls_at=tuple(falls_at),last_prog=last_prog,last_place=last_place,
+                fin=tuple(sorted(fin,reverse=True)),m=g.m)
+
+t0=time.time()
+for sd in range(1001,1501):
+    TIMELINE.append(play_instr(sd))
+d=sum(1 for r in TIMELINE if r['res']=='win')
+stall=sum(1 for r in TIMELINE if r['res']=='empate_tope')
+print(f"bateria: {len(TIMELINE)} partidas ({time.time()-t0:.0f}s), decididas={d} ({100*d/len(TIMELINE):.1f}%), empate_tope={stall}")
