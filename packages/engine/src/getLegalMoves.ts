@@ -42,7 +42,12 @@ export function getLegalMoves(state: GameState, house: House): LegalMovesResult 
   );
   const isSovereignOnBoard = sovereign?.location === 'board';
 
-  // Rule: Sovereign MUST be placed on or before 4th own turn (ownTurn === 3 is 4th turn if 0-indexed)
+  // Rule (Manual v0.4 §3): Sovereign must be placed at the latest on own 4th turn.
+  // ownTurn is 0-indexed count of completed turns.
+  // Turn 1: ownTurn == 0
+  // Turn 2: ownTurn == 1
+  // Turn 3: ownTurn == 2
+  // Turn 4: ownTurn == 3 -> Sovereign is mandatory ONLY if not on board by the 4th turn!
   const mustPlaceSovereignNow = !isSovereignOnBoard && ownTurn >= 3;
 
   // 1. PLACEMENTS from hand
@@ -98,7 +103,7 @@ export function getLegalMoves(state: GameState, house: House): LegalMovesResult 
   }
 
   // 2. MOVEMENTS of pieces already on board
-  // Rule: Cannot move pieces if Sovereign is not on the board yet!
+  // Rule (Manual v0.4 §3): "No puedes mover ninguna ficha hasta haber colocado tu Soberano."
   if (isSovereignOnBoard) {
     const boardPieces = Object.values(state.pieces).filter(
       (p) => p.house === house && p.location === 'board'

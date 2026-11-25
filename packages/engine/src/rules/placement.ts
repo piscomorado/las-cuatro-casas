@@ -31,7 +31,7 @@ export function validatePlacement(
   }
 
   // Sixth space exception: cannot complete the 6th neighboring cell of any living Sovereign
-  // Checked first to enforce the strict rule against completing a siege via placement!
+  // Checked with priority so completing a siege by placement is explicitly flagged
   if (wouldCompleteSixthSpace(state, coord)) {
     return { valid: false, reason: 'CANNOT_COMPLETE_SIXTH_SPACE' };
   }
@@ -49,11 +49,11 @@ export function validatePlacement(
     return { valid: true };
   }
 
-  // Subsequent placements: STRICT COLONY RULE:
+  // Subsequent placements: STRICT COLONY RULE matching reference Python engine:
   // Must touch at least one friendly piece (top piece of friendly house)
-  // AND MUST NOT touch any enemy piece (top piece of different house, alive or ruin)
+  // AND MUST NOT touch any enemy piece belonging to an ALIVE house!
   let touchesFriendly = false;
-  let touchesEnemy = false;
+  let touchesAliveEnemy = false;
 
   for (const nbKey of occupiedNeighborKeys) {
     const stack = state.board[nbKey as CellKey];
@@ -63,14 +63,14 @@ export function validatePlacement(
       if (topPiece) {
         if (topPiece.house === house && topPiece.location !== 'ruin') {
           touchesFriendly = true;
-        } else {
-          touchesEnemy = true;
+        } else if (topPiece.house !== house && state.aliveHouses.includes(topPiece.house)) {
+          touchesAliveEnemy = true;
         }
       }
     }
   }
 
-  if (!touchesFriendly || touchesEnemy) {
+  if (!touchesFriendly || touchesAliveEnemy) {
     return { valid: false, reason: 'STRICT_COLONY_VIOLATION' };
   }
 
@@ -96,7 +96,6 @@ export function wouldCompleteSixthSpace(state: GameState, coord: AxialCoord): bo
       // Is target coord one of the neighbors of this Sovereign?
       const isNeighborOfSO = soNeighbors.some((n) => n.q === coord.q && n.r === coord.r);
       if (isNeighborOfSO) {
-        // Count how many neighbors of this Sovereign are currently occupied
         let occupiedNeighbors = 0;
         for (const sn of soNeighbors) {
           const snKey = coordToKey(sn);
@@ -104,7 +103,6 @@ export function wouldCompleteSixthSpace(state: GameState, coord: AxialCoord): bo
             occupiedNeighbors++;
           }
         }
-        // If 5 are already occupied, placing here would be the 6th!
         if (occupiedNeighbors === 5) {
           return true;
         }

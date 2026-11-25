@@ -48,7 +48,9 @@ export const HandTray: React.FC<HandTrayProps> = ({
   }
 
   const sovereignInHand = grouped['SO'] && grouped['SO'].length > 0;
-  const sovereignMustBePlaced = sovereignInHand && ownTurn >= 3;
+  // Rule: Sovereign must be placed on or before 4th own turn (ownTurn === 3 is the 4th turn)
+  const isFourthTurn = ownTurn >= 3;
+  const sovereignMustBePlaced = sovereignInHand && isFourthTurn;
 
   return (
     <div
@@ -66,19 +68,22 @@ export const HandTray: React.FC<HandTrayProps> = ({
           )}
         </div>
         <span className="text-xs text-slate-400">
-          Turno {ownTurn + 1} • {handPieces.length} fichas
+          Turno {ownTurn + 1} de tu casa • {handPieces.length} fichas
         </span>
       </div>
 
-      {sovereignMustBePlaced && isActive && (
-        <div className="mb-2 text-xs font-semibold text-amber-300 bg-amber-950/60 border border-amber-600/50 rounded px-2 py-1 flex items-center gap-1.5">
-          ⚠️ ¡Debes colocar tu Soberano en este turno!
+      {/* Clear contextual badge according to turn */}
+      {isActive && sovereignMustBePlaced && (
+        <div className="mb-2 text-xs font-semibold text-amber-300 bg-amber-950/70 border border-amber-600/60 rounded-lg px-2.5 py-1.5 flex items-center gap-2 animate-bounce">
+          <span>👑</span>
+          <span>4.º turno de tu casa: ¡Es obligatorio colocar al Soberano!</span>
         </div>
       )}
 
-      {!hasSovereignOnBoard && isActive && !sovereignMustBePlaced && (
-        <div className="mb-2 text-[11px] text-slate-400 bg-slate-900/60 rounded px-2 py-0.5">
-          ℹ️ Coloca tu Soberano para habilitar el movimiento de fichas.
+      {isActive && !hasSovereignOnBoard && !sovereignMustBePlaced && (
+        <div className="mb-2 text-[11px] text-slate-300 bg-slate-900/80 border border-slate-700/80 rounded-lg px-2.5 py-1.5 flex items-center gap-2">
+          <span className="text-amber-400 font-bold">Turno {ownTurn + 1}/4:</span>
+          <span>Puedes colocar cualquier ficha (el Soberano es obligatorio a más tardar en el 4.º turno).</span>
         </div>
       )}
 
@@ -87,6 +92,7 @@ export const HandTray: React.FC<HandTrayProps> = ({
         {Object.entries(grouped).map(([type, pieceList]) => {
           const piece = pieceList[0]!;
           const isSelected = selectedPiece?.location === 'hand' && selectedPiece?.type === piece.type && selectedPiece?.house === house;
+          // Only disabled if it's not the active player's turn, OR if 4th turn was reached without Sovereign and trying to pick non-SO
           const isDisabled = !isActive || (sovereignMustBePlaced && type !== 'SO');
 
           return (
