@@ -10,6 +10,8 @@ export interface HandTrayProps {
   onSelectPiece: (piece: Piece) => void;
   ownTurn: number;
   hasSovereignOnBoard: boolean;
+  phase?: 'setup' | 'play';
+  setupCount?: number;
 }
 
 const HOUSE_CONFIGS: Record<House, { name: string; border: string; bg: string; activeGlow: string }> = {
@@ -37,6 +39,8 @@ export const HandTray: React.FC<HandTrayProps> = ({
   onSelectPiece,
   ownTurn,
   hasSovereignOnBoard,
+  phase = 'play',
+  setupCount = 0,
 }) => {
   const config = HOUSE_CONFIGS[house];
 
@@ -48,9 +52,12 @@ export const HandTray: React.FC<HandTrayProps> = ({
   }
 
   const sovereignInHand = grouped['SO'] && grouped['SO'].length > 0;
-  // Rule: Sovereign must be placed on or before 4th own turn (ownTurn === 3 is the 4th turn)
-  const isFourthTurn = ownTurn >= 3;
-  const sovereignMustBePlaced = sovereignInHand && isFourthTurn;
+  // Option A Rule: In setup phase, Sovereign MUST be placed if 2 pieces placed and sovereign still in hand
+  const isSetup = phase === 'setup';
+  const sovereignMustBePlaced = sovereignInHand && (
+    (isSetup && setupCount >= 2) ||
+    (!isSetup && ownTurn >= 3)
+  );
 
   return (
     <div
@@ -68,19 +75,31 @@ export const HandTray: React.FC<HandTrayProps> = ({
           )}
         </div>
         <span className="text-xs text-slate-400">
-          Turno {ownTurn + 1} de tu casa • {handPieces.length} fichas
+          {isSetup ? `Apertura: ${setupCount}/3 fichas` : `Turno ${ownTurn + 1} de tu casa`} • {handPieces.length} fichas
         </span>
       </div>
 
-      {/* Clear contextual badge according to turn */}
-      {isActive && sovereignMustBePlaced && (
+      {/* Clear contextual badge according to turn / phase */}
+      {isActive && isSetup && (
+        <div className="mb-2 text-xs font-semibold text-emerald-300 bg-emerald-950/70 border border-emerald-600/60 rounded-lg px-2.5 py-1.5 flex items-center gap-2">
+          <span>🚀</span>
+          <span>
+            {setupCount === 0 && 'Apertura: Coloca tu 1.ª ficha (Soberano u otra).'}
+            {setupCount === 1 && 'Apertura: Coloca tu 2.ª ficha contigua a tus fichas.'}
+            {setupCount === 2 && !hasSovereignOnBoard && '¡Última ficha de apertura! Es obligatorio colocar al Soberano 👑'}
+            {setupCount === 2 && hasSovereignOnBoard && 'Apertura: Coloca tu 3.ª y última ficha inicial.'}
+          </span>
+        </div>
+      )}
+
+      {isActive && !isSetup && sovereignMustBePlaced && (
         <div className="mb-2 text-xs font-semibold text-amber-300 bg-amber-950/70 border border-amber-600/60 rounded-lg px-2.5 py-1.5 flex items-center gap-2 animate-bounce">
           <span>👑</span>
           <span>4.º turno de tu casa: ¡Es obligatorio colocar al Soberano!</span>
         </div>
       )}
 
-      {isActive && !hasSovereignOnBoard && !sovereignMustBePlaced && (
+      {isActive && !isSetup && !hasSovereignOnBoard && !sovereignMustBePlaced && (
         <div className="mb-2 text-[11px] text-slate-300 bg-slate-900/80 border border-slate-700/80 rounded-lg px-2.5 py-1.5 flex items-center gap-2">
           <span className="text-amber-400 font-bold">Turno {ownTurn + 1}/4:</span>
           <span>Puedes colocar cualquier ficha (el Soberano es obligatorio a más tardar en el 4.º turno).</span>

@@ -50,11 +50,14 @@ export interface GameConfig {
   hunterMaxSteps: number;
   strictColonyPlacement: boolean;
   repetitionLimit: number;
+  initialSetupPiecesCount: number; // 3 pieces per house in opening phase
 }
 
 export interface GameState {
   readonly id: string;
   readonly seed: number;
+  readonly phase: 'setup' | 'play'; // 'setup': initial 3-piece deployment, 'play': normal turns
+  readonly setupCount: Readonly<Record<House, number>>; // Placements done in setup (0, 1, 2)
   readonly turn: number; // Global action count
   readonly activeHouses: readonly House[];
   readonly aliveHouses: readonly House[];
@@ -91,7 +94,8 @@ export type GameEvent =
   | { type: 'PieceLost'; pieceId: string; house: House; reason: string }
   | { type: 'TurnPassed'; house: House }
   | { type: 'HouseDefeated'; house: House; sovereignCell: AxialCoord }
-  | { type: 'GameFinished'; winner: House | null; drawReason: 'repetition' | 'simultaneous' | 'cap' | null };
+  | { type: 'GameFinished'; winner: House | null; drawReason: 'repetition' | 'simultaneous' | 'cap' | null }
+  | { type: 'SetupCompleted' };
 
 export type IllegalReason =
   | 'NOT_YOUR_TURN'
@@ -101,6 +105,7 @@ export type IllegalReason =
   | 'PIECE_NOT_OWNED'
   | 'MUST_PLACE_SOVEREIGN'
   | 'CANNOT_MOVE_BEFORE_SOVEREIGN'
+  | 'CANNOT_MOVE_DURING_SETUP'
   | 'CELL_OCCUPIED'
   | 'STRICT_COLONY_VIOLATION'
   | 'CANNOT_COMPLETE_SIXTH_SPACE'

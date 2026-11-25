@@ -91,13 +91,6 @@ export const App: React.FC = () => {
     };
   }, [gameState, isCurrentPlayerBot, currentHouse, botDifficulty]);
 
-  // Check if Sovereign is on board for active house
-  const hasSovereignOnBoard = useMemo(() => {
-    return Object.values(gameState.pieces).some(
-      (p) => p.house === currentHouse && p.type === 'SO' && p.location === 'board'
-    );
-  }, [gameState, currentHouse]);
-
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-slate-950 select-none">
       {/* Main Board View */}
@@ -108,6 +101,15 @@ export const App: React.FC = () => {
             <h1 className="font-extrabold text-sm tracking-wide bg-gradient-to-r from-amber-400 via-rose-400 to-indigo-400 bg-clip-text text-transparent">
               LAS CUATRO CASAS
             </h1>
+            <span className="text-slate-600">|</span>
+            <div className="flex items-center gap-2 text-xs">
+              <span className="text-slate-400">Fase:</span>
+              <span className="font-bold text-emerald-400">
+                {gameState.phase === 'setup'
+                  ? `Apertura (${gameState.setupCount[currentHouse] + 1}/3 fichas)`
+                  : 'Desarrollo'}
+              </span>
+            </div>
             <span className="text-slate-600">|</span>
             <div className="flex items-center gap-2 text-xs">
               <span className="text-slate-400">Acción:</span>
@@ -234,7 +236,13 @@ export const App: React.FC = () => {
               selectedPiece={selectedPiece}
               onSelectPiece={handleSelectPiece}
               ownTurn={gameState.ownTurns[h]}
-              hasSovereignOnBoard={hasSovereignOnBoard}
+              hasSovereignOnBoard={
+                Object.values(gameState.pieces).some(
+                  (p) => p.house === h && p.type === 'SO' && p.location === 'board'
+                )
+              }
+              phase={gameState.phase}
+              setupCount={gameState.setupCount[h]}
             />
           ))}
         </div>

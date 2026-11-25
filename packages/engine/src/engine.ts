@@ -59,9 +59,18 @@ export function initGame(options?: {
     amber: 0,
   };
 
+  const setupCount: Record<House, number> = {
+    red: 0,
+    blue: 0,
+    green: 0,
+    amber: 0,
+  };
+
   return {
     id,
     seed,
+    phase: 'setup',
+    setupCount,
     turn: 0,
     activeHouses,
     aliveHouses: [...activeHouses],
@@ -94,6 +103,7 @@ export function initGame(options?: {
       hunterMaxSteps: 4,
       strictColonyPlacement: true,
       repetitionLimit: 3,
+      initialSetupPiecesCount: 3,
     },
   };
 }
@@ -408,14 +418,41 @@ export function applyAction(state: GameState, action: Action): ActionResult {
     });
   }
 
-  // Next house rotation
+  // Next house rotation & phase management
+  let nextPhase = state.phase;
+  const nextSetupCount = { ...state.setupCount };
   let nextHouseIndex = state.currentHouseIndex;
-  if (nextAliveHouses.length > 0) {
-    nextHouseIndex = (state.currentHouseIndex + 1) % nextAliveHouses.length;
+
+  if (state.phase === 'setup') {
+    // Increment setup count for current house
+    nextSetupCount[currentHouse] = (nextSetupCount[currentHouse] ?? 0) + 1;
+
+    if (nextSetupCount[currentHouse] < state.config.initialSetupPiecesCount) {
+      // Same house continues placing its 3 initial pieces
+      nextHouseIndex = state.currentHouseIndex;
+    } else {
+      // House finished its 3 setup placements, move to next house
+      const nextIdx = state.currentHouseIndex + 1;
+      if (nextIdx < nextAliveHouses.length) {
+        nextHouseIndex = nextIdx;
+      } else {
+        // All houses finished setup phase! Transition to 'play' phase
+        nextPhase = 'play';
+        nextHouseIndex = 0; // Red starts standard play
+        events.push({ type: 'SetupCompleted' });
+      }
+    }
+  } else {
+    // Normal play rotation
+    if (nextAliveHouses.length > 0) {
+      nextHouseIndex = (state.currentHouseIndex + 1) % nextAliveHouses.length;
+    }
   }
 
   const nextState: GameState = {
     ...state,
+    phase: nextPhase,
+    setupCount: nextSetupCount,
     turn: nextGlobalTurn,
     aliveHouses: nextAliveHouses,
     currentHouseIndex: nextHouseIndex,

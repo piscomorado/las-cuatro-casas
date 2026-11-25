@@ -21,6 +21,7 @@ describe('Manual v0.4 §6: Destierro y Reingreso como Ficha Nueva', () => {
 
     state = {
       ...state,
+      phase: 'play',
       board: newBoard,
       pieces: newPieces,
     };

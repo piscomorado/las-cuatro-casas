@@ -28,27 +28,22 @@ describe('Manual v0.4 §4.2: Colocación Estricta de Colonia', () => {
 
   it('strictly forbids subsequent placement touching an enemy piece', () => {
     let state = initGame();
-    // 1. Red at 0,0
-    state = applyAction(state, {
-      type: 'PlacePiece',
-      house: 'red',
-      pieceId: 'red-EX-1',
-      to: { q: 0, r: 0 },
-    }).state;
+    // Simulate state where Red has a piece at 0,0 and Blue has a piece at 1,0
+    state = {
+      ...state,
+      phase: 'play',
+      board: {
+        '0,0': ['red-EX-1'],
+        '1,0': ['blue-EX-1'],
+      },
+      pieces: {
+        ...state.pieces,
+        'red-EX-1': { ...state.pieces['red-EX-1']!, location: 'board', cellKey: '0,0' },
+        'blue-EX-1': { ...state.pieces['blue-EX-1']!, location: 'board', cellKey: '1,0' },
+      },
+    };
 
-    // 2. Blue at 1,0
-    state = applyAction(state, {
-      type: 'PlacePiece',
-      house: 'blue',
-      pieceId: 'blue-EX-1',
-      to: { q: 1, r: 0 },
-    }).state;
-
-    // Green passes, Amber passes for the test setup
-    state = applyAction(state, { type: 'Pass', house: 'green' }).state;
-    state = applyAction(state, { type: 'Pass', house: 'amber' }).state;
-
-    // Now it is Red's 2nd turn.
+    // Now it is Red's turn.
     // Red has already placed at 0,0.
     // Trying to place at (1,-1) touches both (0,0)[Red] and (1,0)[Blue].
     // Strict colony forbids touching enemy pieces!

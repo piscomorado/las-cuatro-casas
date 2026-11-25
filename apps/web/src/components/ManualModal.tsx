@@ -122,6 +122,9 @@ export const ManualModal: React.FC<ManualModalProps> = ({ isOpen, onClose }) => 
           <div className="bg-slate-950/70 border border-slate-800 rounded-xl p-4 text-xs text-slate-300 space-y-2">
             <div className="font-bold text-amber-400 text-sm mb-1">Las Reglas de Oro</div>
             <p>
+              • <strong className="text-white">Fase de Apertura (3 fichas iniciales):</strong> Cada casa comienza desplegando obligatoriamente 3 fichas en su zona antes de comenzar la fase de desarrollo. Entre esas 3 fichas DEBE estar su Soberano (no necesariamente de primera, pero sí dentro de las 3 iniciales).
+            </p>
+            <p>
               • <strong className="text-white">Colocación Estricta:</strong> Cada ficha nueva colocada desde la reserva debe tocar al menos una ficha propia y NO PUEDE tocar fichas de otras casas vivas (excepto la primera ficha de cada casa).
             </p>
             <p>
@@ -129,9 +132,6 @@ export const ManualModal: React.FC<ManualModalProps> = ({ isOpen, onClose }) => 
             </p>
             <p>
               • <strong className="text-white">Prohibición de Cerco por Colocación:</strong> Jamás se permite completar la sexta casilla de cerco alrededor de un Soberano vivo mediante una colocación directa.
-            </p>
-            <p>
-              • <strong className="text-white">Soberano Obligatorio:</strong> Puedes colocar al Soberano en cualquiera de tus primeros 4 turnos. A más tardar en tu 4.º turno propio, su colocación es obligatoria.
             </p>
           </div>
 

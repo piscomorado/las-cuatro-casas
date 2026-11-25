@@ -42,13 +42,16 @@ export function getLegalMoves(state: GameState, house: House): LegalMovesResult 
   );
   const isSovereignOnBoard = sovereign?.location === 'board';
 
-  // Rule (Manual v0.4 §3): Sovereign must be placed at the latest on own 4th turn.
-  // ownTurn is 0-indexed count of completed turns.
-  // Turn 1: ownTurn == 0
-  // Turn 2: ownTurn == 1
-  // Turn 3: ownTurn == 2
-  // Turn 4: ownTurn == 3 -> Sovereign is mandatory ONLY if not on board by the 4th turn!
-  const mustPlaceSovereignNow = !isSovereignOnBoard && ownTurn >= 3;
+  // Rule (Option A Opening Rule): In 'setup' phase, each house places initialSetupPiecesCount (3) pieces.
+  // Sovereign must be among the 3. If setupCount is initialSetupPiecesCount - 1 (i.e. 2, the 3rd piece)
+  // and Sovereign is not on board yet, Sovereign is mandatory!
+  // In 'play' phase: sovereign is guaranteed to be on the board.
+  const isSetupPhase = state.phase === 'setup';
+  const currentSetupCount = state.setupCount[house] ?? 0;
+  const mustPlaceSovereignNow = !isSovereignOnBoard && (
+    (isSetupPhase && currentSetupCount >= (state.config.initialSetupPiecesCount - 1)) ||
+    (!isSetupPhase && ownTurn >= 3)
+  );
 
   // 1. PLACEMENTS from hand
   const handPieces = Object.values(state.pieces).filter(
@@ -100,6 +103,14 @@ export function getLegalMoves(state: GameState, house: House): LegalMovesResult 
         }
       }
     }
+  }
+
+  // In setup phase, only placements are allowed; piece movements are prohibited until play phase
+  if (isSetupPhase) {
+    return {
+      actions,
+      canPass: actions.length === 0,
+    };
   }
 
   // 2. MOVEMENTS of pieces already on board

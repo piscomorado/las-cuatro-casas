@@ -29,9 +29,10 @@ describe('Manual v0.4 §6: Regla del Soberano (Colocación <= turno 4 y sin movi
   it('forces Sovereign placement if 4th own turn is reached without Sovereign', () => {
     let state = initGame();
 
-    // Set ownTurns for red to 3 (about to play 4th turn)
+    // Set ownTurns for red to 3 (about to play 4th turn in play phase)
     state = {
       ...state,
+      phase: 'play',
       ownTurns: { ...state.ownTurns, red: 3 },
       board: { '0,0': ['red-EX-1'] },
       pieces: {

@@ -64,6 +64,8 @@ describe('Manual v0.4 §9: Condiciones de Empate y Casos Especiales', () => {
     const hash = Object.keys(state.positionHistory)[0]!;
     state = {
       ...state,
+      phase: 'play',
+      currentHouseIndex: 1, // Blue's turn
       positionHistory: { [hash]: 2 },
     };
 
