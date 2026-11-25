@@ -24,7 +24,7 @@ const HOUSE_CONFIGS: Record<House, { name: string; border: string; bg: string; a
 const PIECE_NAMES: Record<PieceType, string> = {
   SO: 'Soberano',
   EX: 'Explorador',
-  CZ: 'Cazador',
+  CZ: 'Cazador / Espadachín',
   BS: 'Bestia Saltadora',
   GI: 'Gigante',
   HE: 'Hechicero',

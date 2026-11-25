@@ -38,11 +38,12 @@ const PIECE_MANUAL: {
   },
   {
     code: 'CZ',
-    name: 'El Cazador',
+    name: 'El Cazador / Espadachín',
     count: 3,
-    description: 'Recorre en línea recta hasta 4 pasos, sin girar en su trayectoria.',
+    description: 'Recorre en línea recta hasta 5 pasos, sin girar en su trayectoria.',
     details: [
-      'Puede saltar por encima de exactamente UNA pila de altura 1.',
+      'Salta en línea recta por encima de una pieza contigua (como el saltamontes de Hive).',
+      'Puede recorrer hasta 5 pasos en línea recta si el camino lo permite.',
       'Cualquier pila de altura 2 o más lo bloquea por completo.',
       'Aterriza en una casilla vacía que toque la formación.',
     ],

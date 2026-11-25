@@ -21,12 +21,13 @@ export function getCazadorMoves(
   const isBridge = !isOneHive(hiveWithoutMe);
 
   const moves: AxialCoord[] = [];
+  const maxSteps = state.config.hunterMaxSteps ?? 5;
 
   for (const dir of DIRS) {
     let curr = coord;
     let over = 0; // Number of height-1 stacks jumped over in this line
 
-    for (let step = 1; step <= 4; step++) {
+    for (let step = 1; step <= maxSteps; step++) {
       curr = addCoords(curr, dir);
       const currKey = coordToKey(curr);
       const stack = state.board[currKey];
