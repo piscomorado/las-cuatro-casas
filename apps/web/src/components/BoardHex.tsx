@@ -42,15 +42,15 @@ export const BoardHex: React.FC<BoardHexProps> = ({
   const getCandidateStyles = () => {
     switch (candidateType) {
       case 'place':
-        return { fill: 'rgba(34, 197, 94, 0.35)', stroke: '#22c55e', strokeWidth: 3, dash: 'none' };
+        return { fill: 'rgba(34, 197, 94, 0.28)', stroke: '#22c55e', strokeWidth: 2.5, dash: 'none' };
       case 'move':
-        return { fill: 'rgba(59, 130, 246, 0.4)', stroke: '#60a5fa', strokeWidth: 3, dash: 'none' };
+        return { fill: 'rgba(59, 130, 246, 0.32)', stroke: '#60a5fa', strokeWidth: 2.5, dash: 'none' };
       case 'climb':
-        return { fill: 'rgba(168, 85, 247, 0.45)', stroke: '#c084fc', strokeWidth: 3, dash: '4 2' };
+        return { fill: 'rgba(168, 85, 247, 0.38)', stroke: '#c084fc', strokeWidth: 2.5, dash: '4 2' };
       case 'swap':
-        return { fill: 'rgba(234, 179, 8, 0.45)', stroke: '#facc15', strokeWidth: 3, dash: '4 2' };
+        return { fill: 'rgba(234, 179, 8, 0.38)', stroke: '#facc15', strokeWidth: 2.5, dash: '4 2' };
       case 'exile':
-        return { fill: 'rgba(239, 68, 68, 0.5)', stroke: '#f87171', strokeWidth: 3, dash: '3 2' };
+        return { fill: 'rgba(239, 68, 68, 0.42)', stroke: '#f87171', strokeWidth: 2.5, dash: '3 2' };
     }
   };
 
@@ -60,7 +60,7 @@ export const BoardHex: React.FC<BoardHexProps> = ({
     <g
       transform={`translate(${x}, ${y})`}
       onClick={onClick}
-      className="cursor-pointer"
+      className={`cursor-pointer hex-animated ${topPiece ? 'animate-piece-drop' : ''}`}
     >
       {/* 1. Base Empty Slot */}
       {stackHeight === 0 && (
@@ -71,6 +71,8 @@ export const BoardHex: React.FC<BoardHexProps> = ({
             stroke={candStyle ? candStyle.stroke : '#334155'}
             strokeWidth={candStyle ? candStyle.strokeWidth : 1}
             strokeDasharray={candStyle?.dash}
+            className={isCandidate ? 'candidate-glow' : undefined}
+            style={isCandidate ? { color: candStyle?.stroke } : undefined}
           />
           {/* Ghost preview of candidate placement */}
           {isCandidate && candidatePieceType && (
@@ -178,6 +180,8 @@ export const BoardHex: React.FC<BoardHexProps> = ({
           stroke={candStyle!.stroke}
           strokeWidth={candStyle!.strokeWidth}
           strokeDasharray={candStyle!.dash}
+          className="candidate-glow"
+          style={{ color: candStyle!.stroke }}
           pointerEvents="none"
         />
       )}
@@ -189,6 +193,8 @@ export const BoardHex: React.FC<BoardHexProps> = ({
           cy={stackHeight > 1 ? -6 : 0}
           r={stackHeight === 0 && !candidatePieceType ? 6 : 4}
           fill={candStyle!.stroke}
+          className="candidate-glow"
+          style={{ color: candStyle!.stroke }}
           pointerEvents="none"
         />
       )}

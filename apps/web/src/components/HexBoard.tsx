@@ -139,6 +139,15 @@ export const HexBoard: React.FC<HexBoardProps> = ({
     setZoom((prev) => Math.min(Math.max(prev * factor, 0.4), 2.5));
   };
 
+  const currentHouse = state.aliveHouses[state.currentHouseIndex] ?? 'red';
+  const HOUSE_AMBIENT_COLORS: Record<string, { inner: string; outer: string }> = {
+    red: { inner: 'rgba(185, 28, 28, 0.15)', outer: '#020617' },
+    blue: { inner: 'rgba(29, 78, 216, 0.15)', outer: '#020617' },
+    green: { inner: 'rgba(21, 128, 61, 0.15)', outer: '#020617' },
+    amber: { inner: 'rgba(180, 83, 9, 0.15)', outer: '#020617' },
+  };
+  const ambient = HOUSE_AMBIENT_COLORS[currentHouse] ?? { inner: 'rgba(30, 41, 59, 0.4)', outer: '#020617' };
+
   return (
     <div
       ref={containerRef}
@@ -151,9 +160,10 @@ export const HexBoard: React.FC<HexBoardProps> = ({
     >
       <svg className="w-full h-full pointer-events-auto">
         <defs>
-          <radialGradient id="bg-glow" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#1e293b" stopOpacity="0.4" />
-            <stop offset="100%" stopColor="#020617" stopOpacity="0.9" />
+          <radialGradient id="bg-glow" cx="50%" cy="50%" r="65%">
+            <stop offset="0%" stopColor={ambient.inner} className="transition-colors duration-700" />
+            <stop offset="65%" stopColor="#0a0f1d" stopOpacity="0.85" />
+            <stop offset="100%" stopColor="#020617" stopOpacity="0.98" />
           </radialGradient>
         </defs>
         <rect width="100%" height="100%" fill="url(#bg-glow)" pointerEvents="none" />
