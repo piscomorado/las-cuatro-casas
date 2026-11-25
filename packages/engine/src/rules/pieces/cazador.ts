@@ -24,23 +24,31 @@ export function getCazadorMoves(
 
   for (const dir of DIRS) {
     let curr = coord;
+    let over = 0; // Number of height-1 stacks jumped over in this line
+
     for (let step = 1; step <= 4; step++) {
       curr = addCoords(curr, dir);
       const currKey = coordToKey(curr);
       const stack = state.board[currKey];
       const stackHeight = stack?.length ?? 0;
 
-      // If blocked by a stack of height >= 2, line is blocked
+      // If cell has stack >= 2, line is blocked
       if (stackHeight >= 2) {
         break;
       }
 
-      // If cell is occupied by 1 piece, we jump over it and continue
+      // If cell has stack === 1, we can jump over exactly ONE stack of height 1
       if (stackHeight === 1) {
+        over++;
+        if (over > 1) {
+          // Cannot jump over a second piece/stack
+          break;
+        }
         continue;
       }
 
-      // Cell is empty: valid landing candidate if it touches the formation
+      // Cell is empty (stackHeight === 0)
+      // Landing rule: must touch the remaining formation
       const touchesHive = getNeighbors(curr).some((n) => {
         const nKey = coordToKey(n);
         return hiveWithoutMe.has(nKey);
@@ -51,8 +59,6 @@ export function getCazadorMoves(
           moves.push(curr);
         }
       }
-      // An empty cell does not block straight line of up to 4 steps as long as path permits,
-      // but in game rules each step advances along the line.
     }
   }
 
