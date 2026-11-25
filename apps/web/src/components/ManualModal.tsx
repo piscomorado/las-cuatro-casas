@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { PieceType } from '@lcch/engine';
 import { PieceIcon } from './PieceIcon';
+import { PieceMovementDemo } from './PieceMovementDemo';
 
 export interface ManualModalProps {
   isOpen: boolean;
   onClose: () => void;
+  initialPiece?: PieceType;
 }
 
 const PIECE_MANUAL: {
@@ -21,7 +23,7 @@ const PIECE_MANUAL: {
     description: 'Objetivo de victoria del juego. Se desliza 1 espacio a una casilla adyacente vacía.',
     details: [
       'Si sus 6 casillas vecinas quedan ocupadas (cerco de cualquier color o ruinas), tu casa cae inmediatamente.',
-      'Debe colocarse en el tablero a más tardar en el 4.º turno propio.',
+      'Debe colocarse en el tablero dentro de las 3 primeras fichas de la Apertura.',
       'No se pueden mover otras fichas hasta que tu Soberano esté en el tablero.',
     ],
   },
@@ -95,19 +97,34 @@ const PIECE_MANUAL: {
   },
 ];
 
-export const ManualModal: React.FC<ManualModalProps> = ({ isOpen, onClose }) => {
+export const ManualModal: React.FC<ManualModalProps> = ({
+  isOpen,
+  onClose,
+  initialPiece = 'SO',
+}) => {
+  const [activeTab, setActiveTab] = useState<'demo' | 'catalog'>('demo');
+  const [selectedDemoPiece, setSelectedDemoPiece] = useState<PieceType>(initialPiece);
+
   if (!isOpen) return null;
 
+  const handleOpenDemoForPiece = (code: PieceType) => {
+    setSelectedDemoPiece(code);
+    setActiveTab('demo');
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in">
-      <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-3 sm:p-4 animate-fade-in">
+      <div className="bg-slate-900 border border-slate-700/80 rounded-2xl max-w-3xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-950/50">
-          <div>
-            <h2 className="text-lg font-black text-white tracking-wide flex items-center gap-2">
-              <span>📜</span> MANUAL OFICIAL — GUERRA DE LAS CUATRO CASAS
-            </h2>
-            <p className="text-xs text-slate-400 mt-0.5">Versión del reglamento 0.4 definitiva</p>
+        <div className="px-5 py-3.5 border-b border-slate-800 bg-slate-950/70 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">📜</span>
+            <div>
+              <h2 className="text-base sm:text-lg font-black text-white tracking-wide font-cinzel">
+                MANUAL OFICIAL — LAS CUATRO CASAS
+              </h2>
+              <p className="text-[11px] text-slate-400">Reglamento v0.4 con demostración gráfica interactiva</p>
+            </div>
           </div>
           <button
             onClick={onClose}
@@ -117,66 +134,120 @@ export const ManualModal: React.FC<ManualModalProps> = ({ isOpen, onClose }) => 
           </button>
         </div>
 
-        {/* Content list */}
-        <div className="p-6 overflow-y-auto space-y-6">
-          {/* Rules overview */}
-          <div className="bg-slate-950/70 border border-slate-800 rounded-xl p-4 text-xs text-slate-300 space-y-2">
-            <div className="font-bold text-amber-400 text-sm mb-1">Las Reglas de Oro</div>
-            <p>
-              • <strong className="text-white">Fase de Apertura (3 fichas iniciales):</strong> Cada casa comienza desplegando obligatoriamente 3 fichas en su zona antes de comenzar la fase de desarrollo. Entre esas 3 fichas DEBE estar su Soberano (no necesariamente de primera, pero sí dentro de las 3 iniciales).
-            </p>
-            <p>
-              • <strong className="text-white">Colocación Estricta:</strong> Cada ficha nueva colocada desde la reserva debe tocar al menos una ficha propia y NO PUEDE tocar fichas de otras casas vivas (excepto la primera ficha de cada casa).
-            </p>
-            <p>
-              • <strong className="text-white">Conectividad (One Hive):</strong> La colonia entera (vivos y ruinas) forma siempre una sola pieza conectada. Ninguna jugada puede separar la formación.
-            </p>
-            <p>
-              • <strong className="text-white">Prohibición de Cerco por Colocación:</strong> Jamás se permite completar la sexta casilla de cerco alrededor de un Soberano vivo mediante una colocación directa.
-            </p>
-          </div>
+        {/* Tab Navigation */}
+        <div className="flex items-center gap-2 px-5 py-2.5 bg-slate-950/40 border-b border-slate-800/80">
+          <button
+            onClick={() => setActiveTab('demo')}
+            className={`flex items-center gap-2 px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${
+              activeTab === 'demo'
+                ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
+                : 'bg-slate-800/60 text-slate-300 hover:bg-slate-800 hover:text-white'
+            }`}
+          >
+            <span>♟️</span>
+            <span>Movimientos Animados</span>
+            <span className="text-[9px] px-1.5 py-0.2 rounded-full font-black uppercase bg-amber-400/30 text-amber-950">
+              En Vivo
+            </span>
+          </button>
 
-          {/* Piece catalog */}
-          <div>
-            <div className="font-bold text-sm text-slate-200 mb-3 uppercase tracking-wider">
-              Elenco de Personajes y Emblemas Oficiales
+          <button
+            onClick={() => setActiveTab('catalog')}
+            className={`flex items-center gap-2 px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${
+              activeTab === 'catalog'
+                ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
+                : 'bg-slate-800/60 text-slate-300 hover:bg-slate-800 hover:text-white'
+            }`}
+          >
+            <span>📖</span>
+            <span>Reglas de Oro & Catálogo</span>
+          </button>
+        </div>
+
+        {/* Modal Scrollable Body */}
+        <div className="p-4 sm:p-5 overflow-y-auto space-y-5">
+          {activeTab === 'demo' ? (
+            /* Animated Demo View */
+            <div className="space-y-4">
+              <PieceMovementDemo initialPiece={selectedDemoPiece} />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {PIECE_MANUAL.map((p) => (
-                <div
-                  key={p.code}
-                  className="bg-slate-800/40 border border-slate-700/60 rounded-xl p-3.5 flex gap-3 hover:border-slate-500 transition-colors"
-                >
-                  <div className="w-12 h-12 rounded-xl bg-slate-900 border border-slate-700 flex items-center justify-center shrink-0 shadow-inner">
-                    <PieceIcon type={p.code} size={30} white={true} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-sm text-white">{p.name}</span>
-                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-800 text-slate-400">
-                        {p.count} por casa
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-300 mt-1">{p.description}</p>
-                    <ul className="mt-2 space-y-1 text-[11px] text-slate-400 list-disc list-inside">
-                      {p.details.map((d, i) => (
-                        <li key={i}>{d}</li>
-                      ))}
-                    </ul>
-                  </div>
+          ) : (
+            /* Written Rules & Piece Catalog */
+            <div className="space-y-5">
+              {/* Rules overview */}
+              <div className="bg-slate-950/70 border border-slate-800 rounded-xl p-4 text-xs text-slate-300 space-y-2">
+                <div className="font-bold text-amber-400 text-sm mb-1 flex items-center gap-1.5">
+                  <span>⚔️</span> Las Reglas de Oro
                 </div>
-              ))}
+                <p>
+                  • <strong className="text-white">Fase de Apertura (3 fichas iniciales):</strong> Cada casa despliega obligatoriamente 3 fichas en su zona antes de comenzar la fase de desarrollo. Entre esas 3 fichas DEBE estar su Soberano.
+                </p>
+                <p>
+                  • <strong className="text-white">Colocación Estricta:</strong> Cada ficha nueva colocada desde la reserva debe tocar al menos una ficha propia y NO PUEDE tocar fichas de otras casas vivas (excepto la primera ficha de cada casa).
+                </p>
+                <p>
+                  • <strong className="text-white">Conectividad (One Hive):</strong> La colonia entera (vivos y ruinas) forma siempre una sola pieza conectada. Ninguna jugada puede separar la formación.
+                </p>
+                <p>
+                  • <strong className="text-white">Prohibición de Cerco por Colocación:</strong> Jamás se permite completar la sexta casilla de cerco alrededor de un Soberano vivo mediante una colocación directa.
+                </p>
+              </div>
+
+              {/* Piece catalog grid */}
+              <div>
+                <div className="font-bold text-xs text-slate-400 mb-3 uppercase tracking-wider">
+                  Catálogo de Personajes (Haz clic para ver su animación)
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {PIECE_MANUAL.map((p) => (
+                    <div
+                      key={p.code}
+                      className="bg-slate-800/40 border border-slate-700/60 rounded-xl p-3.5 flex flex-col justify-between gap-3 hover:border-slate-500 transition-colors"
+                    >
+                      <div className="flex gap-3">
+                        <div className="w-12 h-12 rounded-xl bg-slate-900 border border-slate-700 flex items-center justify-center shrink-0 shadow-inner">
+                          <PieceIcon type={p.code} size={30} white={true} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-sm text-white">{p.name}</span>
+                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-800 text-slate-400">
+                              {p.count} por casa
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-300 mt-1">{p.description}</p>
+                          <ul className="mt-2 space-y-1 text-[11px] text-slate-400 list-disc list-inside">
+                            {p.details.map((d, i) => (
+                              <li key={i}>{d}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => handleOpenDemoForPiece(p.code)}
+                        className="w-full py-1.5 px-3 rounded-lg bg-indigo-600/30 hover:bg-indigo-600 border border-indigo-500/40 text-indigo-200 hover:text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all"
+                      >
+                        <span>▶</span> Ver demostración animada
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-3 border-t border-slate-800 bg-slate-950/50 flex justify-end">
+        <div className="px-5 py-3 border-t border-slate-800 bg-slate-950/70 flex items-center justify-between">
+          <span className="text-[11px] text-slate-500">
+            {activeTab === 'demo' ? 'Usa los botones superiores para pausar o saltar pasos' : 'Haz clic en cualquier ficha para ver su movimiento en vivo'}
+          </span>
           <button
             onClick={onClose}
             className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase tracking-wider shadow-lg transition-transform active:scale-95"
           >
-            Entendido
+            Cerrar Manual
           </button>
         </div>
       </div>
