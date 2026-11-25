@@ -109,7 +109,7 @@ export function initGame(options?: {
       SAMPLE: 50,
       NOISE: 6.0,
       sovereignPlacementLimitTurn: 4,
-      hunterMaxSteps: 5,
+      hunterMaxSteps: 4,
       strictColonyPlacement: true,
       repetitionLimit: 3,
       initialSetupPiecesCount: 3,

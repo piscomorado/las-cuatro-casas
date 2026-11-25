@@ -109,56 +109,52 @@ export const PIECE_SCENARIOS: Record<PieceType, DemoScenario[]> = {
   ],
   CZ: [
     {
-      title: 'Carrera y Saltos Rectilíneos y Diagonales (Hasta 5 pasos)',
+      title: 'Carrera y Salto de hasta 4 pasos (3 fichas + 1 espacio)',
       pieceType: 'CZ',
       pieceName: 'El Cazador / Espadachín',
-      subtitle: '6 sentidos de avance: 2 horizontales y 4 diagonales',
-      description: 'El Cazador recorre en línea recta hasta 5 pasos en cualquiera de los 6 ejes hexagonales. Puede avanzar por casillas libres que toquen la colonia o saltar por encima de 1 ficha de altura 1.',
-      ruleCallout: 'Puede recorrer hasta 5 casillas en línea recta (horizontales y diagonales). Salta a lo sumo 1 ficha de altura 1; cualquier pila de altura 2 o una segunda ficha corta su carrera.',
+      subtitle: '6 sentidos de avance: 2 horizontales y 4 diagonales (máx 4 pasos)',
+      description: 'El Cazador recorre en línea recta hasta 4 pasos en cualquiera de los 6 ejes hexagonales. Puede saltar por encima de hasta 3 fichas contiguas de altura 1 y ocupar la 4.ª casilla.',
+      ruleCallout: 'Máximo 4 pasos de alcance total: puede saltar 1, 2 o hasta 3 fichas de altura 1 y ocupar el espacio libre siguiente. Pilas de altura >= 2 cortan su carrera.',
       baseHexes: [
         { q: 0, r: 0, label: 'Cazador' },
-        // Eje Horizontal Este: Carrera libre y salto
-        { q: 1, r: 0, isTarget: true, label: '1 paso' },
-        { q: 2, r: 0, pieceType: 'BS', house: 'green', label: 'Ficha (Salto)' },
-        { q: 3, r: 0, isTarget: true, label: '3 pasos' },
-        { q: 4, r: 0, isTarget: true, label: '4 pasos' },
-        { q: 5, r: 0, isTarget: true, label: '5 pasos' },
+        // Eje Horizontal Este: 3 fichas contiguas saltadas + 4.ª casilla de aterrizaje
+        { q: 1, r: 0, pieceType: 'EX', house: 'blue', label: '1.ª Ficha' },
+        { q: 2, r: 0, pieceType: 'GI', house: 'green', label: '2.ª Ficha' },
+        { q: 3, r: 0, pieceType: 'BS', house: 'amber', label: '3.ª Ficha' },
+        { q: 4, r: 0, isTarget: true, label: '4.º Paso (Destino)' },
 
-        // Diagonal Noreste (+1, -1)
-        { q: 1, r: -1, isTarget: true, label: '1 paso NE' },
-        { q: 2, r: -2, pieceType: 'EX', house: 'blue', label: 'Ficha NE' },
-        { q: 3, r: -2, isTarget: true, label: '3 pasos NE' },
+        // Diagonal Noreste (+1, -1): Salto de 1 ficha + aterrizaje en 2.º paso
+        { q: 1, r: -1, pieceType: 'EX', house: 'green', label: 'Ficha NE' },
+        { q: 2, r: -2, isTarget: true, label: '2.º Paso NE' },
 
-        // Diagonal Sureste (0, +1)
-        { q: 0, r: 1, isTarget: true, label: '1 paso SE' },
-        { q: 0, r: 2, isTarget: true, label: '2 pasos SE' },
+        // Diagonal Sureste (0, +1): Carrera libre de 2 pasos
+        { q: 0, r: 1, isTarget: true, label: '1 paso libre' },
+        { q: 0, r: 2, isTarget: true, label: '2 pasos libres' },
 
         // Apoyo de colonia conectada
         { q: 0, r: -1, pieceType: 'SO', house: 'blue', label: 'Colonia' },
         { q: -1, r: 0, pieceType: 'GI', house: 'amber', label: 'Colonia' },
         { q: 1, r: 1, pieceType: 'SO', house: 'green', label: 'Colonia' },
         { q: 2, r: 1, pieceType: 'EX', house: 'amber', label: 'Colonia' },
+        { q: 3, r: 1, pieceType: 'GI', house: 'blue', label: 'Colonia' },
       ],
       waypoints: [
-        { q: 0, r: 0, stepLabel: 'En posición de salida: puede avanzar hasta 5 pasos en 6 sentidos' },
-        { q: 1, r: 0, stepLabel: '1 paso horizontal directo por casilla libre adyacente' },
-        { q: 3, r: 0, stepLabel: '¡Salto horizontal de 3 pasos pasando por encima de la ficha verde!', isJumping: true },
-        { q: 5, r: 0, stepLabel: '¡O extiende la carrera horizontal hasta el límite máximo de 5 pasos!' },
+        { q: 0, r: 0, stepLabel: 'En posición de salida: hasta 4 pasos en 6 sentidos' },
+        { q: 2, r: -2, stepLabel: '¡Salto en Diagonal Noreste saltando 1 ficha y ocupando el 2.º paso!', isJumping: true },
         { q: 0, r: 0, stepLabel: 'Regresa al origen' },
-        { q: 1, r: -1, stepLabel: '1 paso en Diagonal Noreste libre' },
-        { q: 3, r: -2, stepLabel: '¡Salto en Diagonal Noreste pasando sobre la ficha azul!', isJumping: true },
+        { q: 4, r: 0, stepLabel: '¡Salto Horizontal épico: salta 3 fichas consecutivas y ocupa el 4.º espacio!', isJumping: true },
         { q: 0, r: 0, stepLabel: 'Regresa al origen' },
-        { q: 0, r: 2, stepLabel: 'Carrera de 2 pasos en Diagonal Sureste' },
-        { q: 0, r: 0, stepLabel: 'Ciclo multi-direccional de 5 pasos completado' },
+        { q: 0, r: 2, stepLabel: 'Carrera libre de 2 pasos en Diagonal Sureste' },
+        { q: 0, r: 0, stepLabel: 'Ciclo de 4 pasos completado' },
       ],
     },
     {
-      title: 'Bloqueo por Pilas de Altura 2 o Segunda Ficha',
+      title: 'Bloqueo por Muros de Altura 2+',
       pieceType: 'CZ',
       pieceName: 'El Cazador / Espadachín',
       subtitle: 'Regla de interrupción de carrera',
-      description: 'El Cazador se detiene si encuentra una pila de altura 2 o superior, o si se interpone una segunda ficha en su trayectoria.',
-      ruleCallout: 'Las pilas altas (altura >= 2) son muros impenetrables para el Cazador. Tampoco puede saltar dos fichas seguidas (eso es poder de la Bestia Saltadora).',
+      description: 'Cualquier pila de altura 2 o más detiene por completo la carrera del Cazador en esa dirección.',
+      ruleCallout: 'Las pilas dominadas de 2 o más fichas actúan como muros impenetrables que cortan el salto y la carrera.',
       baseHexes: [
         { q: 0, r: 0, label: 'Cazador' },
         { q: 1, r: 0, pieceType: 'EX', house: 'green', label: 'Pila x2 (Muro)', isPinnedUnder: true },

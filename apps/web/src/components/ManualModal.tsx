@@ -42,12 +42,12 @@ const PIECE_MANUAL: {
     code: 'CZ',
     name: 'El Cazador / Espadachín',
     count: 3,
-    description: 'Recorre en línea recta hasta 5 pasos en cualquiera de sus 6 sentidos (horizontales y diagonales).',
+    description: 'Recorre en línea recta hasta 4 pasos en cualquiera de sus 6 sentidos (horizontales y diagonales).',
     details: [
-      'Se desplaza en línea recta sin girar a lo largo de los 6 ejes hexagonales (horizontales y diagonales).',
-      'Puede pasar por encima de exactamente una pila de altura 1 en su trayectoria.',
-      'Cualquier pila de altura 2 o más o una segunda ficha corta su carrera por completo.',
-      'Aterriza en cualquier casilla vacía que toque la formación conectada hasta 5 pasos de distancia.',
+      'Se desplaza en línea recta sin girar hasta 4 pasos de distancia (horizontales y diagonales).',
+      'Puede saltar por encima de hasta 3 fichas de altura 1 en su trayectoria y ocupar la 4.ª casilla.',
+      'Cualquier pila de altura 2 o más corta su carrera por completo.',
+      'Aterriza en una casilla vacía que toque la formación conectada.',
     ],
   },
   {

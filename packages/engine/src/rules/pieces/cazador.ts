@@ -21,7 +21,7 @@ export function getCazadorMoves(
   const isBridge = !isOneHive(hiveWithoutMe);
 
   const moves: AxialCoord[] = [];
-  const maxSteps = state.config.hunterMaxSteps ?? 5;
+  const maxSteps = state.config.hunterMaxSteps ?? 4;
 
   for (const dir of DIRS) {
     let curr = coord;
@@ -38,11 +38,11 @@ export function getCazadorMoves(
         break;
       }
 
-      // If cell has stack === 1, we can jump over exactly ONE stack of height 1
+      // If cell has stack === 1, can jump over up to 3 pieces of height 1
       if (stackHeight === 1) {
         over++;
-        if (over > 1) {
-          // Cannot jump over a second piece/stack
+        if (over > 3) {
+          // Cannot jump over more than 3 pieces
           break;
         }
         continue;
