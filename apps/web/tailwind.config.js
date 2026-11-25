@@ -6,6 +6,10 @@ export default {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        title: ['Cinzel', 'serif'],
+        medieval: ['MedievalSharp', 'cursive'],
+      },
       colors: {
         house: {
           red: '#dc2626',
