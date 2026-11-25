@@ -35,7 +35,16 @@ export interface DemoScenario {
   baseHexes: DemoHexCell[];
   // Animation frames or sequence:
   // Waypoint positions the moving piece visits
-  waypoints: { q: number; r: number; stepLabel: string; isClimbing?: boolean; isJumping?: boolean }[];
+  waypoints: {
+    q: number;
+    r: number;
+    stepLabel: string;
+    isClimbing?: boolean;
+    isJumping?: boolean;
+    beamFrom?: { q: number; r: number };
+    beamTo?: { q: number; r: number };
+    copiedType?: PieceType;
+  }[];
   // Extra animated elements (for Nigromante swap/exile or Hechicero magic link)
   secondaryActor?: {
     type: PieceType;
@@ -208,24 +217,138 @@ export const PIECE_SCENARIOS: Record<PieceType, DemoScenario[]> = {
   ],
   HE: [
     {
-      title: 'Mimetismo del Hechicero de Cadenas',
+      title: 'Mimetismo Múltiple (Bestia, Explorador y Gigante)',
       pieceType: 'HE',
       pieceName: 'El Hechicero de Cadenas',
-      subtitle: 'Copia los movimientos de fichas vecinas',
-      description: 'En el suelo, copia temporalmente el movimiento de cualquier ficha superior adyacente (amiga, enemiga o ruina), excepto al Nigromante.',
-      ruleCallout: 'Si trepa a una pila copiando a un Gigante, en turnos siguientes se moverá como un Gigante (1 paso) sin copiar.',
+      subtitle: 'Copia cualquier ficha adyacente (viva o ruina)',
+      description: 'El Hechicero puede elegir qué habilidad copiar de entre todas las fichas que esté tocando físicamente al inicio de su turno.',
+      ruleCallout: 'Copia el movimiento de la ficha superior de cualquier pila que toque (excepto al Nigromante). La copia vale solo ese turno.',
+      baseHexes: [
+        { q: 0, r: 0, label: 'Hechicero' },
+        // Vecino 1: Bestia Saltadora (Este)
+        { q: 1, r: 0, pieceType: 'BS', house: 'blue', label: 'Bestia (Este)' },
+        { q: 2, r: 0, isTarget: true, label: 'Salto Bestia' },
+
+        // Vecino 2: Explorador (Sureste)
+        { q: 0, r: 1, pieceType: 'EX', house: 'green', label: 'Explorador (SE)' },
+        { q: 1, r: 1, isTarget: true, label: 'Borde EX' },
+
+        // Vecino 3: Gigante (Oeste)
+        { q: -1, r: 0, pieceType: 'GI', house: 'amber', label: 'Gigante (Oeste)' },
+
+        // Vecino 4: Soberano (Noroeste) - casilla donde trepar
+        { q: 0, r: -1, pieceType: 'SO', house: 'blue', label: 'Soberano (NO)', isPinnedUnder: true },
+
+        // Piezas de apoyo para cerrar la colonia
+        { q: -1, r: 1, pieceType: 'SO', house: 'green', label: 'Colonia' },
+        { q: 1, r: -1, pieceType: 'EX', house: 'amber', label: 'Colonia' },
+      ],
+      waypoints: [
+        { q: 0, r: 0, stepLabel: 'En el centro: Toca a la Bestia (Este), Explorador (SE) y Gigante (Oeste)' },
+        {
+          q: 0,
+          r: 0,
+          stepLabel: '1. Enlace místico con la Bestia: Canaliza su poder de salto',
+          beamFrom: { q: 0, r: 0 },
+          beamTo: { q: 1, r: 0 },
+          copiedType: 'BS',
+        },
+        {
+          q: 2,
+          r: 0,
+          stepLabel: '¡Ejecuta el salto de Bestia! Salta sobre la ficha contigua hasta el hueco',
+          isJumping: true,
+          copiedType: 'BS',
+        },
+        { q: 0, r: 0, stepLabel: 'Retorna a la posición central' },
+        {
+          q: 0,
+          r: 0,
+          stepLabel: '2. Enlace místico con el Explorador: Canaliza su patrulla perimetral',
+          beamFrom: { q: 0, r: 0 },
+          beamTo: { q: 0, r: 1 },
+          copiedType: 'EX',
+        },
+        {
+          q: 1,
+          r: 1,
+          stepLabel: '¡Ejecuta el planeo del Explorador! Bordea el perímetro exterior de la colmena',
+          copiedType: 'EX',
+        },
+        { q: 0, r: 0, stepLabel: 'Retorna a la posición central' },
+        {
+          q: 0,
+          r: 0,
+          stepLabel: '3. Enlace místico con el Gigante: Canaliza la fuerza para trepar',
+          beamFrom: { q: 0, r: 0 },
+          beamTo: { q: -1, r: 0 },
+          copiedType: 'GI',
+        },
+        {
+          q: 0,
+          r: -1,
+          stepLabel: '¡Ejecuta la trepada de Gigante! Sube encima del Soberano quedando a altura ▲2',
+          isClimbing: true,
+          copiedType: 'GI',
+        },
+        { q: 0, r: 0, stepLabel: 'Desciende y retorna al suelo. Mimetismo múltiple completado' },
+      ],
+    },
+    {
+      title: 'Trepada y Descenso (Copia de Gigante)',
+      pieceType: 'HE',
+      pieceName: 'El Hechicero de Cadenas',
+      subtitle: 'Comportamiento en la cima de pilas',
+      description: 'Solo copiando a un Gigante puede trepar a una pila. Mientras esté sobre una pila, se mueve 1 paso como Gigante y ya no copia habilidades.',
+      ruleCallout: 'En la cima de una pila, no copia nada: se desplaza 1 espacio a otra pila o desciende al suelo.',
       baseHexes: [
         { q: -1, r: 0, label: 'Inicio' },
-        { q: 0, r: 0, pieceType: 'BS', house: 'blue', label: 'Bestia (Copiada)' },
-        { q: 1, r: 0, pieceType: 'EX', house: 'green', label: 'Hilera' },
-        { q: 2, r: 0, isTarget: true, label: 'Salto copiado' },
-        { q: 0, r: 1, pieceType: 'SO', house: 'amber', label: 'Apoyo' },
+        { q: 0, r: 0, pieceType: 'SO', house: 'blue', label: 'Soberano Rival', isPinnedUnder: true },
+        { q: -1, r: 1, pieceType: 'GI', house: 'amber', label: 'Gigante (Aliado)' },
+        { q: 1, r: 0, pieceType: 'EX', house: 'green', label: 'Apoyo' },
+        { q: 0, r: -1, isTarget: true, label: 'Descenso' },
       ],
-      linkBeam: { from: { q: -1, r: 0 }, to: { q: 0, r: 0 } },
       waypoints: [
-        { q: -1, r: 0, stepLabel: 'Toca a la Bestia y canaliza su poder' },
-        { q: 2, r: 0, stepLabel: '¡Ejecuta el salto de Bestia Saltadora hasta el hueco!', isJumping: true },
-        { q: -1, r: 0, stepLabel: 'Regresa a su posición mágica' },
+        {
+          q: -1,
+          r: 0,
+          stepLabel: 'Canaliza al Gigante aliado contiguo',
+          beamFrom: { q: -1, r: 0 },
+          beamTo: { q: -1, r: 1 },
+          copiedType: 'GI',
+        },
+        { q: 0, r: 0, stepLabel: '¡Trepa a la pila del Soberano quedando en altura ▲2!', isClimbing: true, copiedType: 'GI' },
+        { q: 0, r: -1, stepLabel: 'Desde la cima, desciende a un espacio libre adyacente' },
+        { q: -1, r: 0, stepLabel: 'Retorna a su posición inicial' },
+      ],
+    },
+    {
+      title: 'Excepción Absoluta: Inmune ante Nigromante',
+      pieceType: 'HE',
+      pieceName: 'El Hechicero de Cadenas',
+      subtitle: 'No puede copiar habilidades del Nigromante',
+      description: 'Aunque esté tocando a un Nigromante enemigo o aliado, el Hechicero de Cadenas tiene prohibido copiar sus poderes (ni intercambio ni destierro).',
+      ruleCallout: '⚠️ Excepción de Oro: El Nigromante es la única ficha cuyas habilidades nunca pueden ser copiadas por el Hechicero.',
+      baseHexes: [
+        { q: 0, r: 0, label: 'Hechicero' },
+        { q: 1, r: 0, pieceType: 'NI', house: 'blue', label: 'Nigromante (Incopiable)' },
+        { q: 0, r: 1, pieceType: 'EX', house: 'green', label: 'Explorador (Copiable)' },
+        { q: 1, r: 1, isTarget: true, label: 'Destino EX' },
+        { q: -1, r: 0, pieceType: 'SO', house: 'amber', label: 'Colonia' },
+      ],
+      waypoints: [
+        { q: 0, r: 0, stepLabel: 'Toca al Nigromante y al Explorador' },
+        { q: 0, r: 0, stepLabel: '❌ Intento con Nigromante: Poderes oscuros bloqueados' },
+        {
+          q: 0,
+          r: 0,
+          stepLabel: '✓ Elige copiar al Explorador vecino',
+          beamFrom: { q: 0, r: 0 },
+          beamTo: { q: 0, r: 1 },
+          copiedType: 'EX',
+        },
+        { q: 1, r: 1, stepLabel: '¡Ejecuta el movimiento legal del Explorador!', copiedType: 'EX' },
+        { q: 0, r: 0, stepLabel: 'Retorna a la posición inicial' },
       ],
     },
   ],
@@ -559,19 +682,26 @@ export const PieceMovementDemo: React.FC<PieceMovementDemoProps> = ({
               />
             )}
 
-            {/* Magic Link Beam (for Hechicero) */}
-            {activeScenario.linkBeam && (
-              <line
-                x1={hexToPixel(activeScenario.linkBeam.from, DEMO_HEX_SIZE).x}
-                y1={hexToPixel(activeScenario.linkBeam.from, DEMO_HEX_SIZE).y}
-                x2={hexToPixel(activeScenario.linkBeam.to, DEMO_HEX_SIZE).x}
-                y2={hexToPixel(activeScenario.linkBeam.to, DEMO_HEX_SIZE).y}
-                stroke="url(#magicBeam)"
-                strokeWidth="3.5"
-                strokeDasharray="5 3"
-                className="animate-pulse"
-              />
-            )}
+            {/* Dynamic Magic Link Beam (for Hechicero) */}
+            {(() => {
+              const bFrom = waypoint.beamFrom || activeScenario.linkBeam?.from;
+              const bTo = waypoint.beamTo || activeScenario.linkBeam?.to;
+              if (!bFrom || !bTo) return null;
+              const pFrom = hexToPixel(bFrom, DEMO_HEX_SIZE);
+              const pTo = hexToPixel(bTo, DEMO_HEX_SIZE);
+              return (
+                <line
+                  x1={pFrom.x}
+                  y1={pFrom.y}
+                  x2={pTo.x}
+                  y2={pTo.y}
+                  stroke="url(#magicBeam)"
+                  strokeWidth="3.5"
+                  strokeDasharray="5 3"
+                  className="animate-pulse"
+                />
+              );
+            })()}
 
             {/* Secondary Actor (e.g. Nigromante Swap/Exile victim) */}
             {activeScenario.secondaryActor && secondaryPos && (
@@ -644,6 +774,19 @@ export const PieceMovementDemo: React.FC<PieceMovementDemoProps> = ({
                   >
                     ▲2
                   </text>
+                </g>
+              )}
+              {/* Copied ability badge (for Hechicero) */}
+              {waypoint.copiedType && (
+                <g transform="translate(13, 13)">
+                  <circle r="9" fill="#7e22ce" stroke="#facc15" strokeWidth="1.5" />
+                  <SvgPieceIcon
+                    type={waypoint.copiedType}
+                    x={-6}
+                    y={-6}
+                    size={12}
+                    white={true}
+                  />
                 </g>
               )}
             </g>
