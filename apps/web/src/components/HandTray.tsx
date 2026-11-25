@@ -9,6 +9,7 @@ export interface HandTrayProps {
   selectedPiece: Piece | null;
   onSelectPiece: (piece: Piece) => void;
   ownTurn: number;
+  hasSovereignOnBoard: boolean;
 }
 
 const HOUSE_CONFIGS: Record<House, { name: string; border: string; bg: string; activeGlow: string }> = {
@@ -35,10 +36,10 @@ export const HandTray: React.FC<HandTrayProps> = ({
   selectedPiece,
   onSelectPiece,
   ownTurn,
+  hasSovereignOnBoard,
 }) => {
   const config = HOUSE_CONFIGS[house];
 
-  // Group hand pieces by type
   const handPieces = pieces.filter((p) => p.house === house && p.location === 'hand');
   const grouped: Record<string, Piece[]> = {};
   for (const p of handPieces) {
@@ -75,11 +76,17 @@ export const HandTray: React.FC<HandTrayProps> = ({
         </div>
       )}
 
+      {!hasSovereignOnBoard && isActive && !sovereignMustBePlaced && (
+        <div className="mb-2 text-[11px] text-slate-400 bg-slate-900/60 rounded px-2 py-0.5">
+          ℹ️ Coloca tu Soberano para habilitar el movimiento de fichas.
+        </div>
+      )}
+
       {/* Hand piece slots */}
       <div className="flex flex-wrap gap-2">
         {Object.entries(grouped).map(([type, pieceList]) => {
           const piece = pieceList[0]!;
-          const isSelected = selectedPiece?.id === piece.id;
+          const isSelected = selectedPiece?.location === 'hand' && selectedPiece?.type === piece.type && selectedPiece?.house === house;
           const isDisabled = !isActive || (sovereignMustBePlaced && type !== 'SO');
 
           return (
@@ -87,19 +94,19 @@ export const HandTray: React.FC<HandTrayProps> = ({
               key={type}
               disabled={isDisabled}
               onClick={() => onSelectPiece(piece)}
-              className={`relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-left transition-all ${
+              className={`relative flex items-center gap-2 px-3 py-2 rounded-xl border text-left transition-all ${
                 isSelected
-                  ? 'bg-white text-slate-900 border-white font-bold shadow-md scale-105'
+                  ? 'bg-white text-slate-900 border-white font-bold shadow-lg scale-105'
                   : isDisabled
                   ? 'bg-slate-900/60 border-slate-800 text-slate-500 cursor-not-allowed opacity-40'
-                  : 'bg-slate-900/80 border-slate-700 text-slate-200 hover:border-slate-500 hover:bg-slate-800'
+                  : 'bg-slate-900/80 border-slate-700 text-slate-200 hover:border-slate-400 hover:bg-slate-800 active:scale-95'
               }`}
               title={`${PIECE_NAMES[type as PieceType]} (${pieceList.length} disponibles)`}
             >
-              <PieceIcon type={type as PieceType} size={18} />
+              <PieceIcon type={type as PieceType} size={22} white={!isSelected} />
               <span className="text-xs font-medium">{type}</span>
               <span
-                className={`text-[10px] font-bold px-1.5 py-0.2 rounded-full ${
+                className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
                   isSelected ? 'bg-slate-900 text-white' : 'bg-slate-800 text-slate-400'
                 }`}
               >

@@ -45,9 +45,16 @@ export const App: React.FC = () => {
     setSelectedPiece(null);
   };
 
+  // Check if Sovereign is on board for active house
+  const hasSovereignOnBoard = useMemo(() => {
+    return Object.values(gameState.pieces).some(
+      (p) => p.house === currentHouse && p.type === 'SO' && p.location === 'board'
+    );
+  }, [gameState, currentHouse]);
+
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-slate-950 select-none">
-      {/* Main Board View (Interactive Canvas / SVG) */}
+      {/* Main Board View */}
       <div className="relative flex-1 h-full">
         {/* Top Floating Status Bar */}
         <header className="absolute top-4 left-4 right-4 z-20 flex items-center justify-between pointer-events-none">
@@ -169,6 +176,7 @@ export const App: React.FC = () => {
               selectedPiece={selectedPiece}
               onSelectPiece={handleSelectPiece}
               ownTurn={gameState.ownTurns[h]}
+              hasSovereignOnBoard={hasSovereignOnBoard}
             />
           ))}
         </div>
@@ -178,17 +186,17 @@ export const App: React.FC = () => {
           {selectedPiece ? (
             <div className="bg-slate-900/90 rounded-lg p-2.5 border border-slate-700">
               <div className="font-bold text-slate-200">
-                Ficha seleccionada: <span className="text-white">{selectedPiece.type}</span>
+                Ficha seleccionada: <span className="text-white">{selectedPiece.type}</span> ({selectedPiece.house})
               </div>
-              <div className="text-[11px] text-slate-400 mt-0.5">
+              <div className="text-[11px] text-slate-400 mt-1">
                 {selectedPiece.location === 'hand'
-                  ? 'Haz clic en una casilla verde resaltada para colocarla.'
-                  : 'Haz clic en una casilla azul/morada resaltada para moverla.'}
+                  ? '🟩 Haz clic en cualquiera de las casillas verdes iluminadas en el tablero para colocarla.'
+                  : '🟦 Haz clic en las casillas iluminadas para moverla (azul: suelo, morado: trepar, amarillo: swap, rojo: desterrar).'}
               </div>
             </div>
           ) : (
             <div className="text-slate-500 text-center py-2 italic text-[11px]">
-              Selecciona una ficha de tu reserva o del tablero para ver sus jugadas legales.
+              Selecciona una ficha de tu reserva para colocarla, o haz clic en una ficha en el tablero para moverla.
             </div>
           )}
         </div>

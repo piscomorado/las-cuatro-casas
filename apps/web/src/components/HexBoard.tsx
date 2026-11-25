@@ -25,6 +25,7 @@ export const HexBoard: React.FC<HexBoardProps> = ({
   const [zoom, setZoom] = useState(1);
   const [isDragging, setIsDragging] = useState(false);
   const dragStart = useRef({ x: 0, y: 0 });
+  const hasDragged = useRef(false);
 
   // Center the view on initial load or reset
   const centerBoard = () => {
@@ -59,31 +60,44 @@ export const HexBoard: React.FC<HexBoardProps> = ({
     }
   }
 
-  // Filter legal actions relevant to the current selection or placements
+  // Map of candidate target cells based on selection or current turn
   const actionableCandidates = new Map<CellKey, { action: Action; type: 'place' | 'move' | 'climb' | 'swap' | 'exile' }>();
 
   for (const act of legalActions) {
     if (act.type === 'PlacePiece') {
-      if (selectedPiece && selectedPiece.location === 'hand' && selectedPiece.type === state.pieces[act.pieceId]?.type) {
-        actionableCandidates.set(coordToKey(act.to), { action: act, type: 'place' });
+      // If a hand piece is selected (or matching type), show its placement cells
+      if (selectedPiece && selectedPiece.location === 'hand') {
+        const actingPiece = state.pieces[act.pieceId];
+        if (actingPiece && actingPiece.type === selectedPiece.type) {
+          const destKey = coordToKey(act.to);
+          actionableCandidates.set(destKey, { action: act, type: 'place' });
+          displayCells.add(destKey);
+        }
       }
     } else if (act.type === 'MovePiece') {
-      if (selectedPiece && selectedPiece.id === act.pieceId) {
-        actionableCandidates.set(coordToKey(act.to), { action: act, type: 'move' });
+      if (selectedPiece && selectedPiece.location === 'board' && selectedPiece.id === act.pieceId) {
+        const destKey = coordToKey(act.to);
+        actionableCandidates.set(destKey, { action: act, type: 'move' });
+        displayCells.add(destKey);
       }
     } else if (act.type === 'ClimbStack') {
-      if (selectedPiece && selectedPiece.id === act.pieceId) {
-        actionableCandidates.set(coordToKey(act.to), { action: act, type: 'climb' });
+      if (selectedPiece && selectedPiece.location === 'board' && selectedPiece.id === act.pieceId) {
+        const destKey = coordToKey(act.to);
+        actionableCandidates.set(destKey, { action: act, type: 'climb' });
+        displayCells.add(destKey);
       }
     } else if (act.type === 'SwapPiece') {
-      if (selectedPiece && selectedPiece.id === act.pieceId) {
-        actionableCandidates.set(coordToKey(act.to), { action: act, type: 'swap' });
+      if (selectedPiece && selectedPiece.location === 'board' && selectedPiece.id === act.pieceId) {
+        const destKey = coordToKey(act.to);
+        actionableCandidates.set(destKey, { action: act, type: 'swap' });
+        displayCells.add(destKey);
       }
     } else if (act.type === 'ExilePiece') {
-      if (selectedPiece && selectedPiece.id === act.pieceId) {
+      if (selectedPiece && selectedPiece.location === 'board' && selectedPiece.id === act.pieceId) {
         const target = state.pieces[act.targetPieceId];
         if (target?.cellKey) {
           actionableCandidates.set(target.cellKey, { action: act, type: 'exile' });
+          displayCells.add(target.cellKey);
         }
       }
     }
@@ -92,18 +106,26 @@ export const HexBoard: React.FC<HexBoardProps> = ({
   const handlePointerDown = (e: React.PointerEvent) => {
     if (e.button !== 0 && e.pointerType === 'mouse') return;
     setIsDragging(true);
+    hasDragged.current = false;
     dragStart.current = { x: e.clientX - pan.x, y: e.clientY - pan.y };
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
     if (!isDragging) return;
+    const dx = e.clientX - (dragStart.current.x + pan.x);
+    const dy = e.clientY - (dragStart.current.y + pan.y);
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+      hasDragged.current = true;
+    }
     setPan({
       x: e.clientX - dragStart.current.x,
       y: e.clientY - dragStart.current.y,
     });
   };
 
-  const handlePointerUp = () => setIsDragging(false);
+  const handlePointerUp = () => {
+    setIsDragging(false);
+  };
 
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault();
@@ -114,20 +136,21 @@ export const HexBoard: React.FC<HexBoardProps> = ({
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-full overflow-hidden cursor-grab active:cursor-grabbing bg-slate-950"
+      className="relative w-full h-full overflow-hidden select-none bg-slate-950"
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onWheel={handleWheel}
+      style={{ cursor: isDragging ? 'grabbing' : 'default' }}
     >
-      <svg className="w-full h-full">
+      <svg className="w-full h-full pointer-events-auto">
         <defs>
           <radialGradient id="bg-glow" cx="50%" cy="50%" r="50%">
             <stop offset="0%" stopColor="#1e293b" stopOpacity="0.4" />
             <stop offset="100%" stopColor="#020617" stopOpacity="0.9" />
           </radialGradient>
         </defs>
-        <rect width="100%" height="100%" fill="url(#bg-glow)" />
+        <rect width="100%" height="100%" fill="url(#bg-glow)" pointerEvents="none" />
 
         <g transform={`translate(${pan.x}, ${pan.y}) scale(${zoom})`}>
           {Array.from(displayCells).map((cellKey) => {
@@ -140,18 +163,25 @@ export const HexBoard: React.FC<HexBoardProps> = ({
             const cand = actionableCandidates.get(cellKey);
             const isSelected = selectedPiece?.cellKey === cellKey;
 
-            const handleCellClick = () => {
+            const handleCellClick = (e: React.MouseEvent) => {
+              e.stopPropagation();
+              if (hasDragged.current) return;
+
+              // 1. If clicking a legal candidate target, EXECUTE ACTION!
               if (cand) {
                 onExecuteAction(cand.action);
                 return;
               }
 
+              // 2. If clicking an occupied friendly piece, SELECT IT!
               const currentHouse = state.aliveHouses[state.currentHouseIndex];
               if (topPiece && topPiece.house === currentHouse && topPiece.location !== 'ruin') {
                 onSelectPiece(isSelected ? null : topPiece);
-              } else {
-                onSelectPiece(null);
+                return;
               }
+
+              // 3. Otherwise deselect
+              onSelectPiece(null);
             };
 
             return (
@@ -172,24 +202,25 @@ export const HexBoard: React.FC<HexBoardProps> = ({
         </g>
       </svg>
 
-      <div className="absolute bottom-6 right-6 flex flex-col gap-2 z-10">
+      {/* Floating Controls */}
+      <div className="absolute bottom-6 right-6 flex flex-col gap-2 z-10 pointer-events-auto">
         <button
           onClick={() => setZoom((z) => Math.min(z * 1.2, 2.5))}
-          className="w-10 h-10 rounded-full bg-slate-800/80 backdrop-blur border border-slate-700 text-white font-bold hover:bg-slate-700 flex items-center justify-center shadow-lg"
+          className="w-10 h-10 rounded-full bg-slate-800/90 backdrop-blur border border-slate-700 text-white font-bold hover:bg-slate-700 flex items-center justify-center shadow-lg transition-transform active:scale-90"
           title="Zoom In"
         >
           +
         </button>
         <button
           onClick={() => setZoom((z) => Math.max(z * 0.8, 0.4))}
-          className="w-10 h-10 rounded-full bg-slate-800/80 backdrop-blur border border-slate-700 text-white font-bold hover:bg-slate-700 flex items-center justify-center shadow-lg"
+          className="w-10 h-10 rounded-full bg-slate-800/90 backdrop-blur border border-slate-700 text-white font-bold hover:bg-slate-700 flex items-center justify-center shadow-lg transition-transform active:scale-90"
           title="Zoom Out"
         >
           -
         </button>
         <button
           onClick={centerBoard}
-          className="w-10 h-10 rounded-full bg-slate-800/80 backdrop-blur border border-slate-700 text-white text-xs hover:bg-slate-700 flex items-center justify-center shadow-lg"
+          className="w-10 h-10 rounded-full bg-slate-800/90 backdrop-blur border border-slate-700 text-white text-base hover:bg-slate-700 flex items-center justify-center shadow-lg transition-transform active:scale-90"
           title="Centrar Tablero"
         >
           ⌖
