@@ -49,13 +49,6 @@ export function getCazadorMoves(
       }
 
       // Cell is empty (stackHeight === 0)
-      // Like the Grasshopper (The Hive) / Cazador jumping rule:
-      // It MUST jump over at least one occupied piece (over >= 1)!
-      // Cannot just walk into an empty adjacent cell without jumping!
-      if (over === 0) {
-        break; // If step 1 is empty, cannot jump in this direction!
-      }
-
       // Landing rule: must touch the remaining formation
       const touchesHive = getNeighbors(curr).some((n) => {
         const nKey = coordToKey(n);
@@ -67,9 +60,6 @@ export function getCazadorMoves(
           moves.push(curr);
         }
       }
-
-      // Once it lands on an empty space after jumping, its straight-line jump completes
-      break;
     }
   }
 

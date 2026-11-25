@@ -42,12 +42,12 @@ const PIECE_MANUAL: {
     code: 'CZ',
     name: 'El Cazador / Espadachín',
     count: 3,
-    description: 'Salta en cualquiera de sus 6 sentidos rectos o diagonales por encima de una pieza contigua.',
+    description: 'Recorre en línea recta hasta 5 pasos en cualquiera de sus 6 sentidos (horizontales y diagonales).',
     details: [
-      'Salta obligatoriamente por encima de una pieza contigua; jamás puede saltar sobre casillas vacías ni caminar sin impulsarse.',
-      'Aterriza en la primera casilla vacía inmediatamente detrás de la pieza saltada (hasta 5 pasos en la formación).',
-      'Cualquier pila de altura 2 o más lo bloquea por completo.',
-      'Aterriza en una casilla vacía que toque la formación conectada.',
+      'Se desplaza en línea recta sin girar a lo largo de los 6 ejes hexagonales (horizontales y diagonales).',
+      'Puede pasar por encima de exactamente una pila de altura 1 en su trayectoria.',
+      'Cualquier pila de altura 2 o más o una segunda ficha corta su carrera por completo.',
+      'Aterriza en cualquier casilla vacía que toque la formación conectada hasta 5 pasos de distancia.',
     ],
   },
   {
