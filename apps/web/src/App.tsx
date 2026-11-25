@@ -11,9 +11,10 @@ import {
   getBotAction,
   BotDifficulty,
 } from '@lcch/engine';
-import { HexBoard } from './components/HexBoard';
+import { HexBoard, LastMoveInfo } from './components/HexBoard';
 import { HandTray } from './components/HandTray';
 import { ManualModal } from './components/ManualModal';
+import { sounds } from './utils/soundEffects';
 
 export const App: React.FC = () => {
   // Game setup configuration
@@ -23,6 +24,8 @@ export const App: React.FC = () => {
   const [botDifficulty, setBotDifficulty] = useState<BotDifficulty>('medium');
   const [isManualOpen, setIsManualOpen] = useState(false);
   const [isSetupOpen, setIsSetupOpen] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const [lastMove, setLastMove] = useState<LastMoveInfo | null>(null);
 
   // Active houses array based on player count
   const activeHouses = useMemo(() => {
@@ -52,6 +55,47 @@ export const App: React.FC = () => {
   const handleExecuteAction = (action: Action) => {
     const res = applyAction(gameState, action);
     if (res.success) {
+      // Sound feedback based on action type
+      if (action.type === 'PlacePiece') {
+        sounds.playPlaceTile();
+      } else if (action.type === 'MovePiece') {
+        if (action.moveKind === 'cz' || action.moveKind === 'bs') {
+          sounds.playJump();
+        } else {
+          sounds.playSlide();
+        }
+      } else if (action.type === 'ClimbStack' || action.type === 'DescendStack') {
+        sounds.playSlide();
+      } else if (action.type === 'SwapPiece' || action.type === 'ExilePiece') {
+        sounds.playMystic();
+      } else if (action.type === 'Pass') {
+        sounds.playTurnChime();
+      }
+
+      // Check if house was defeated in this action
+      const hasDefeatEvent = res.events.some((e) => e.type === 'HouseDefeated');
+      if (hasDefeatEvent) {
+        sounds.playHouseFell();
+      }
+
+      // Check if setup completed in this action
+      const hasSetupCompleted = res.events.some((e) => e.type === 'SetupCompleted');
+      if (hasSetupCompleted) {
+        sounds.playTurnChime();
+      }
+
+      // Track last move for trajectory visualization
+      if ('to' in action) {
+        setLastMove({
+          action,
+          from: 'from' in action ? action.from : null,
+          to: action.to,
+          house: action.house,
+        });
+      } else {
+        setLastMove(null);
+      }
+
       setGameState(res.state);
       setSelectedPiece(null);
     }
@@ -66,6 +110,7 @@ export const App: React.FC = () => {
     const houses = HOUSES.slice(0, housesCount);
     setGameState(initGame({ seed: Date.now(), houses }));
     setSelectedPiece(null);
+    setLastMove(null);
     isBotThinking.current = false;
   };
 
@@ -127,6 +172,17 @@ export const App: React.FC = () => {
           {/* Quick Actions (Manual / Mode / Restart) */}
           <div className="pointer-events-auto flex items-center gap-2">
             <button
+              onClick={() => {
+                const muted = sounds.toggleMute();
+                setIsMuted(muted);
+              }}
+              className="px-3 py-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-slate-300 font-medium text-xs shadow-lg transition-colors"
+              title={isMuted ? 'Activar Sonido' : 'Silenciar'}
+            >
+              {isMuted ? '🔇' : '🔊'}
+            </button>
+
+            <button
               onClick={() => setIsManualOpen(true)}
               className="px-3.5 py-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-amber-300 font-bold text-xs flex items-center gap-1.5 shadow-lg transition-transform active:scale-95"
             >
@@ -163,6 +219,7 @@ export const App: React.FC = () => {
           state={gameState}
           legalActions={legalMoveResult.actions}
           selectedPiece={selectedPiece}
+          lastMove={lastMove}
           onSelectPiece={handleSelectPiece}
           onExecuteAction={handleExecuteAction}
         />

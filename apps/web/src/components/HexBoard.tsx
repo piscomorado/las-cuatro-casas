@@ -3,10 +3,18 @@ import { GameState, Action, CellKey, Piece, getNeighbors, coordToKey, keyToCoord
 import { BoardHex } from './BoardHex';
 import { hexToPixel, HEX_SIZE } from '../utils/hexMath';
 
+export interface LastMoveInfo {
+  action: Action;
+  from?: { q: number; r: number } | null;
+  to: { q: number; r: number };
+  house: string;
+}
+
 export interface HexBoardProps {
   state: GameState;
   legalActions: Action[];
   selectedPiece: Piece | null;
+  lastMove?: LastMoveInfo | null;
   onSelectPiece: (piece: Piece | null) => void;
   onExecuteAction: (action: Action) => void;
 }
@@ -15,6 +23,7 @@ export const HexBoard: React.FC<HexBoardProps> = ({
   state,
   legalActions,
   selectedPiece,
+  lastMove,
   onSelectPiece,
   onExecuteAction,
 }) => {
@@ -46,6 +55,23 @@ export const HexBoard: React.FC<HexBoardProps> = ({
     (Object.keys(state.board) as CellKey[]).filter((k) => (state.board[k]?.length ?? 0) > 0)
   );
 
+  // Compute siege count around living Sovereigns
+  const sovereignSiegeCounts = new Map<CellKey, number>();
+  for (const p of Object.values(state.pieces)) {
+    if (p.type === 'SO' && p.location === 'board' && p.cellKey && state.aliveHouses.includes(p.house)) {
+      const soCoord = keyToCoord(p.cellKey);
+      let count = 0;
+      for (const nb of getNeighbors(soCoord)) {
+        if (occupiedCellKeys.has(coordToKey(nb))) {
+          count++;
+        }
+      }
+      if (count >= 4) {
+        sovereignSiegeCounts.set(p.cellKey, count);
+      }
+    }
+  }
+
   const displayCells = new Set<CellKey>(occupiedCellKeys);
 
   // Always show (0,0) if empty board
@@ -58,6 +84,14 @@ export const HexBoard: React.FC<HexBoardProps> = ({
         displayCells.add(coordToKey(nb));
       }
     }
+  }
+
+  // Ensure last move cells are in displayCells
+  if (lastMove?.from) {
+    displayCells.add(coordToKey(lastMove.from));
+  }
+  if (lastMove?.to) {
+    displayCells.add(coordToKey(lastMove.to));
   }
 
   // Map of candidate target cells based on selection or current turn
@@ -200,6 +234,10 @@ export const HexBoard: React.FC<HexBoardProps> = ({
               onSelectPiece(null);
             };
 
+            const isLastOrigin = lastMove?.from ? (lastMove.from.q === coord.q && lastMove.from.r === coord.r) : false;
+            const isLastTarget = lastMove?.to ? (lastMove.to.q === coord.q && lastMove.to.r === coord.r) : false;
+            const siegeCount = sovereignSiegeCounts.get(cellKey);
+
             return (
               <BoardHex
                 key={cellKey}
@@ -211,10 +249,37 @@ export const HexBoard: React.FC<HexBoardProps> = ({
                 isCandidate={Boolean(cand)}
                 candidateType={cand?.type}
                 isSelected={isSelected}
+                isLastMoveOrigin={isLastOrigin}
+                isLastMoveTarget={isLastTarget}
+                siegeDangerCount={siegeCount}
                 onClick={handleCellClick}
               />
             );
           })}
+
+          {/* Last Move Trajectory Curved Arc */}
+          {lastMove?.from && lastMove?.to && (() => {
+            const fromPos = hexToPixel(lastMove.from, HEX_SIZE);
+            const toPos = hexToPixel(lastMove.to, HEX_SIZE);
+            const midX = (fromPos.x + toPos.x) / 2;
+            const midY = (fromPos.y + toPos.y) / 2 - 28; // Arc curvature elevation
+            const pathD = `M ${fromPos.x} ${fromPos.y} Q ${midX} ${midY} ${toPos.x} ${toPos.y}`;
+
+            return (
+              <g pointerEvents="none" className="transition-opacity duration-500">
+                <path
+                  d={pathD}
+                  fill="none"
+                  stroke="rgba(245, 158, 11, 0.4)"
+                  strokeWidth="3.5"
+                  strokeDasharray="6 4"
+                  className="animate-pulse"
+                />
+                <circle cx={fromPos.x} cy={fromPos.y} r="3" fill="#f59e0b" opacity="0.8" />
+                <circle cx={toPos.x} cy={toPos.y} r="4" fill="#fbbf24" />
+              </g>
+            );
+          })()}
         </g>
       </svg>
 

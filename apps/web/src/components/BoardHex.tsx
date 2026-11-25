@@ -11,6 +11,9 @@ export interface BoardHexProps {
   pieces?: Piece[]; // Stack of pieces (0 = bottom, last = top)
   isCandidate?: boolean;
   isSelected?: boolean;
+  isLastMoveOrigin?: boolean;
+  isLastMoveTarget?: boolean;
+  siegeDangerCount?: number; // 4 or 5 occupied neighbors around this living Sovereign
   candidateType?: 'place' | 'move' | 'swap' | 'exile' | 'climb';
   candidatePieceType?: Piece['type']; // For previewing piece icon on empty candidate hex
   onClick?: (e: React.MouseEvent) => void;
@@ -30,6 +33,9 @@ export const BoardHex: React.FC<BoardHexProps> = ({
   pieces = [],
   isCandidate = false,
   isSelected = false,
+  isLastMoveOrigin = false,
+  isLastMoveTarget = false,
+  siegeDangerCount,
   candidateType = 'place',
   candidatePieceType,
   onClick,
@@ -74,6 +80,17 @@ export const BoardHex: React.FC<BoardHexProps> = ({
             className={isCandidate ? 'candidate-glow' : undefined}
             style={isCandidate ? { color: candStyle?.stroke } : undefined}
           />
+          {/* Last move ghost origin marker on empty hex */}
+          {isLastMoveOrigin && (
+            <polygon
+              points={hexPoints}
+              fill="rgba(245, 158, 11, 0.12)"
+              stroke="#f59e0b"
+              strokeWidth="1.5"
+              strokeDasharray="4 3"
+              className="opacity-75"
+            />
+          )}
           {/* Ghost preview of candidate placement */}
           {isCandidate && candidatePieceType && (
             <SvgPieceIcon
@@ -138,6 +155,54 @@ export const BoardHex: React.FC<BoardHexProps> = ({
                     strokeWidth="5"
                     strokeOpacity="0.4"
                   />
+                )}
+
+                {/* Last move target border highlight */}
+                {isLastMoveTarget && !isSelected && (
+                  <polygon
+                    points={hexPoints}
+                    fill="none"
+                    stroke="#fbbf24"
+                    strokeWidth="2.5"
+                    strokeDasharray="5 3"
+                    className="opacity-90 animate-pulse"
+                  />
+                )}
+
+                {/* Sovereign Siege Threat Ring (4/6 yellow warning, 5/6 critical red danger) */}
+                {siegeDangerCount && siegeDangerCount >= 4 && (
+                  <g pointerEvents="none">
+                    <polygon
+                      points={hexPoints}
+                      fill="none"
+                      stroke={siegeDangerCount === 5 ? '#ef4444' : '#f59e0b'}
+                      strokeWidth={siegeDangerCount === 5 ? 4 : 2.5}
+                      className={siegeDangerCount === 5 ? 'animate-pulse' : undefined}
+                      strokeDasharray={siegeDangerCount === 5 ? '6 3' : '4 2'}
+                    />
+                    <g transform="translate(0, -26)">
+                      <rect
+                        x="-14"
+                        y="-8"
+                        width="28"
+                        height="16"
+                        rx="8"
+                        fill={siegeDangerCount === 5 ? '#7f1d1d' : '#78350f'}
+                        stroke={siegeDangerCount === 5 ? '#f87171' : '#fbbf24'}
+                        strokeWidth="1"
+                      />
+                      <text
+                        x="0"
+                        y="3.5"
+                        textAnchor="middle"
+                        fontSize="9"
+                        fontWeight="900"
+                        fill="#ffffff"
+                      >
+                        {siegeDangerCount}/6
+                      </text>
+                    </g>
+                  </g>
                 )}
               </>
             );
