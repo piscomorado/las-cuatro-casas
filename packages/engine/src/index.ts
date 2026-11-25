@@ -13,3 +13,4 @@ export * from './rules/pieces/hechicero.js';
 export * from './rules/pieces/nigromante.js';
 export * from './getLegalMoves.js';
 export * from './engine.js';
+export * from './ai/bot.js';
