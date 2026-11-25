@@ -50,7 +50,7 @@ export const App: React.FC = () => {
   }, [numHouses]);
 
   const [gameState, setGameState] = useState<GameState>(() =>
-    initGame({ seed: 1001, houses: activeHouses })
+    initGame({ seed: 1001, houses: activeHouses, randomStart: true })
   );
   const [selectedPiece, setSelectedPiece] = useState<Piece | null>(null);
   const isBotThinking = useRef(false);
@@ -125,7 +125,7 @@ export const App: React.FC = () => {
 
   const handleRestart = (housesCount: 2 | 3 | 4 = numHouses) => {
     const houses = HOUSES.slice(0, housesCount);
-    setGameState(initGame({ seed: Date.now(), houses }));
+    setGameState(initGame({ seed: Date.now(), houses, randomStart: true }));
     setSelectedPiece(null);
     setLastMove(null);
     isBotThinking.current = false;
@@ -157,9 +157,10 @@ export const App: React.FC = () => {
     <div className="flex h-screen w-screen overflow-hidden bg-slate-950 select-none">
       {/* Main Board View */}
       <div className="relative flex-1 h-full">
-        {/* Top Left Title Header */}
-        <header className="absolute top-4 left-6 z-20 flex items-center gap-3 pointer-events-auto">
-          <div className="flex items-center gap-3 bg-slate-900/80 backdrop-blur-md border border-slate-800/80 rounded-2xl px-5 py-3 shadow-2xl">
+        {/* Top Floating Controls Bar */}
+        <header className="absolute top-4 left-6 right-6 z-20 flex items-center justify-between pointer-events-none">
+          {/* Top Left Title Header */}
+          <div className="pointer-events-auto flex items-center gap-3 bg-slate-900/80 backdrop-blur-md border border-slate-800/80 rounded-2xl px-5 py-2.5 shadow-2xl">
             <span className="text-2xl filter drop-shadow">⚔️</span>
             <div>
               <h1 className="font-title font-black text-xl tracking-wider uppercase bg-gradient-to-r from-amber-300 via-rose-300 to-indigo-300 bg-clip-text text-transparent">
@@ -171,15 +172,99 @@ export const App: React.FC = () => {
             </div>
           </div>
 
-          {/* Quick pass alert button if no legal moves */}
-          {legalMoveResult.canPass && gameState.status === 'playing' && !isCurrentPlayerBot && (
+          {/* Top Right Quick Menu Trigger */}
+          <div className="pointer-events-auto relative flex items-center gap-2" ref={menuRef}>
+            {legalMoveResult.canPass && gameState.status === 'playing' && !isCurrentPlayerBot && (
+              <button
+                onClick={handlePass}
+                className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs uppercase tracking-wider shadow-lg transition-transform active:scale-95 animate-pulse"
+              >
+                Sin Jugada Legal (Pasar)
+              </button>
+            )}
+
             <button
-              onClick={handlePass}
-              className="px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs uppercase tracking-wider shadow-xl transition-transform active:scale-95 animate-pulse"
+              onClick={() => setIsMenuOpen((prev) => !prev)}
+              className={`px-3.5 py-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 border transition-all duration-200 text-xs font-bold flex items-center gap-2 shadow-xl ${
+                isMenuOpen
+                  ? 'border-indigo-500 text-white shadow-indigo-950/50 ring-2 ring-indigo-500/30'
+                  : 'border-slate-700 text-slate-200 hover:text-white'
+              }`}
             >
-              Sin Jugada Legal (Pasar)
+              <span>⚙️ Menú</span>
+              <span className={`text-[10px] text-slate-400 transition-transform duration-200 ${isMenuOpen ? 'rotate-180' : ''}`}>
+                ▼
+              </span>
             </button>
-          )}
+
+            {/* Dropdown Panel */}
+            {isMenuOpen && (
+              <div className="absolute right-0 top-full mt-2 w-56 bg-slate-900/95 backdrop-blur-2xl border border-slate-700/80 rounded-2xl p-2 shadow-2xl z-50 flex flex-col gap-1 animate-fade-in">
+                <button
+                  onClick={() => {
+                    setIsManualOpen(true);
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-full px-3 py-2 rounded-xl hover:bg-slate-800/80 text-left text-xs font-bold text-amber-300 flex items-center gap-2.5 transition-colors"
+                >
+                  <span className="text-base">📜</span>
+                  <div className="flex flex-col">
+                    <span>Manual Oficial</span>
+                    <span className="text-[10px] text-slate-400 font-normal">Reglamento v0.4</span>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setIsSetupOpen(true);
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-full px-3 py-2 rounded-xl hover:bg-slate-800/80 text-left text-xs font-semibold text-slate-200 flex items-center gap-2.5 transition-colors"
+                >
+                  <span className="text-base">⚙️</span>
+                  <div className="flex flex-col">
+                    <span>Configuración</span>
+                    <span className="text-[10px] text-slate-400 font-normal">Casas, modo y dificultad</span>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => {
+                    const muted = sounds.toggleMute();
+                    setIsMuted(muted);
+                  }}
+                  className="w-full px-3 py-2 rounded-xl hover:bg-slate-800/80 text-left text-xs font-semibold text-slate-200 flex items-center justify-between transition-colors"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-base">{isMuted ? '🔇' : '🔊'}</span>
+                    <div className="flex flex-col">
+                      <span>Efectos de Sonido</span>
+                      <span className="text-[10px] text-slate-400 font-normal">Web Audio procedural</span>
+                    </div>
+                  </div>
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${isMuted ? 'bg-rose-950 text-rose-400' : 'bg-emerald-950 text-emerald-400'}`}>
+                    {isMuted ? 'OFF' : 'ON'}
+                  </span>
+                </button>
+
+                <div className="my-1 border-t border-slate-800/80" />
+
+                <button
+                  onClick={() => {
+                    handleRestart();
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-full px-3 py-2 rounded-xl hover:bg-rose-950/40 text-left text-xs font-bold text-rose-400 flex items-center gap-2.5 transition-colors"
+                >
+                  <span className="text-base">🔄</span>
+                  <div className="flex flex-col">
+                    <span>Reiniciar Partida</span>
+                    <span className="text-[10px] text-slate-500 font-normal">Nueva casa inicial al azar</span>
+                  </div>
+                </button>
+              </div>
+            )}
+          </div>
         </header>
 
         {/* Board Component */}
@@ -244,163 +329,24 @@ export const App: React.FC = () => {
         )}
       </div>
 
-      {/* Sidebar / Hand Trays */}
-      <aside className="w-84 h-full border-l border-slate-800/80 bg-slate-900/60 backdrop-blur-xl p-4 flex flex-col justify-between overflow-y-auto z-10">
-        <div className="flex flex-col gap-3">
-          {/* Integrated Header with Status & Menu Dropdown */}
-          <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-3 shadow-lg relative" ref={menuRef}>
-            <div className="flex items-center justify-between mb-2">
-              <span className="font-bold text-xs uppercase tracking-wider text-slate-300">
-                Reservas de Casas
-              </span>
-
-              {/* Consolidated Menu Trigger Button */}
-              <button
-                onClick={() => setIsMenuOpen((prev) => !prev)}
-                className={`px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 border transition-all text-xs font-semibold flex items-center gap-1.5 shadow-md ${
-                  isMenuOpen
-                    ? 'border-indigo-500 text-white ring-2 ring-indigo-500/30'
-                    : 'border-slate-700 text-slate-300 hover:text-white'
-                }`}
-              >
-                <span>⚙️ Menú</span>
-                <span className={`text-[9px] text-slate-400 transition-transform duration-200 ${isMenuOpen ? 'rotate-180' : ''}`}>
-                  ▼
-                </span>
-              </button>
-            </div>
-
-            {/* Turn & Match Status Badges inside the Sidebar Box */}
-            <div className="grid grid-cols-3 gap-1.5 pt-2 border-t border-slate-800/80 text-[11px]">
-              <div className="bg-slate-900/90 rounded-lg p-1.5 text-center border border-slate-800">
-                <div className="text-[10px] text-slate-400 font-medium">Fase</div>
-                <div className="font-bold text-emerald-400 truncate">
-                  {gameState.phase === 'setup' ? `${gameState.setupCount[currentHouse] + 1}/3` : 'Juego'}
-                </div>
-              </div>
-              <div className="bg-slate-900/90 rounded-lg p-1.5 text-center border border-slate-800">
-                <div className="text-[10px] text-slate-400 font-medium">Acción</div>
-                <div className="font-mono font-bold text-white">{gameState.turn + 1}/400</div>
-              </div>
-              <div className="bg-slate-900/90 rounded-lg p-1.5 text-center border border-slate-800">
-                <div className="text-[10px] text-slate-400 font-medium">Modo</div>
-                <div className="font-bold text-indigo-400 truncate">
-                  {gameMode === 'pvp' ? `${gameState.activeHouses.length} Casas` : 'vs Bot'}
-                </div>
-              </div>
-            </div>
-
-            {/* Dropdown Panel positioned seamlessly below trigger button */}
-            {isMenuOpen && (
-              <div className="absolute right-3 top-12 w-60 bg-slate-900/95 backdrop-blur-2xl border border-slate-700 rounded-2xl p-2 shadow-2xl z-50 flex flex-col gap-1 animate-fade-in">
-                <button
-                  onClick={() => {
-                    setIsManualOpen(true);
-                    setIsMenuOpen(false);
-                  }}
-                  className="w-full px-3 py-2 rounded-xl hover:bg-slate-800/80 text-left text-xs font-bold text-amber-300 flex items-center gap-2.5 transition-colors"
-                >
-                  <span className="text-base">📜</span>
-                  <div className="flex flex-col">
-                    <span>Manual Oficial</span>
-                    <span className="text-[10px] text-slate-400 font-normal">Reglamento v0.4</span>
-                  </div>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setIsSetupOpen(true);
-                    setIsMenuOpen(false);
-                  }}
-                  className="w-full px-3 py-2 rounded-xl hover:bg-slate-800/80 text-left text-xs font-semibold text-slate-200 flex items-center gap-2.5 transition-colors"
-                >
-                  <span className="text-base">⚙️</span>
-                  <div className="flex flex-col">
-                    <span>Configuración</span>
-                    <span className="text-[10px] text-slate-400 font-normal">Casas, modo y dificultad</span>
-                  </div>
-                </button>
-
-                <button
-                  onClick={() => {
-                    const muted = sounds.toggleMute();
-                    setIsMuted(muted);
-                  }}
-                  className="w-full px-3 py-2 rounded-xl hover:bg-slate-800/80 text-left text-xs font-semibold text-slate-200 flex items-center justify-between transition-colors"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-base">{isMuted ? '🔇' : '🔊'}</span>
-                    <div className="flex flex-col">
-                      <span>Efectos de Sonido</span>
-                      <span className="text-[10px] text-slate-400 font-normal">Web Audio procedural</span>
-                    </div>
-                  </div>
-                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${isMuted ? 'bg-rose-950 text-rose-400' : 'bg-emerald-950 text-emerald-400'}`}>
-                    {isMuted ? 'OFF' : 'ON'}
-                  </span>
-                </button>
-
-                <div className="my-1 border-t border-slate-800/80" />
-
-                <button
-                  onClick={() => {
-                    handleRestart();
-                    setIsMenuOpen(false);
-                  }}
-                  className="w-full px-3 py-2 rounded-xl hover:bg-rose-950/40 text-left text-xs font-bold text-rose-400 flex items-center gap-2.5 transition-colors"
-                >
-                  <span className="text-base">🔄</span>
-                  <div className="flex flex-col">
-                    <span>Reiniciar Partida</span>
-                    <span className="text-[10px] text-slate-500 font-normal">Nueva partida limpia</span>
-                  </div>
-                </button>
-              </div>
-            )}
-          </div>
-
-          {gameState.activeHouses.map((h) => (
-            <HandTray
-              key={h}
-              house={h}
-              pieces={Object.values(gameState.pieces)}
-              isActive={currentHouse === h && gameState.status === 'playing'}
-              selectedPiece={selectedPiece}
-              onSelectPiece={handleSelectPiece}
-              ownTurn={gameState.ownTurns[h]}
-              hasSovereignOnBoard={
-                Object.values(gameState.pieces).some(
-                  (p) => p.house === h && p.type === 'SO' && p.location === 'board'
-                )
-              }
-              phase={gameState.phase}
-              setupCount={gameState.setupCount[h]}
-            />
-          ))}
-        </div>
-
-        {/* Selected piece info panel */}
-        <div className="mt-4 pt-3 border-t border-slate-800 text-xs text-slate-400">
-          {selectedPiece ? (
-            <div className="bg-slate-900/90 rounded-lg p-2.5 border border-slate-700">
-              <div className="font-bold text-slate-200">
-                Ficha seleccionada: <span className="text-white">{selectedPiece.type}</span> ({selectedPiece.house})
-              </div>
-              <div className="text-[11px] text-slate-400 mt-1">
-                {selectedPiece.location === 'hand'
-                  ? '🟩 Haz clic en cualquiera de las casillas verdes iluminadas para colocarla.'
-                  : '🟦 Haz clic en las casillas iluminadas para moverla (azul: suelo, morado: trepar, amarillo: swap, rojo: destierro).'}
-              </div>
-            </div>
-          ) : (
-            <div className="text-slate-500 text-center py-2 italic text-[11px]">
-              {isCurrentPlayerBot
-                ? `🤖 Turno del bot (${currentHouse})...`
-                : 'Haz clic en una ficha de tu reserva o en el tablero para ver sus jugadas legales.'}
-            </div>
-          )}
-        </div>
-      </aside>
+      {/* Floating Bottom Active Hand Tray & Action Bar */}
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 max-w-xl w-[92vw] pointer-events-auto">
+        <HandTray
+          house={currentHouse}
+          pieces={Object.values(gameState.pieces)}
+          isActive={gameState.status === 'playing'}
+          selectedPiece={selectedPiece}
+          onSelectPiece={handleSelectPiece}
+          ownTurn={gameState.ownTurns[currentHouse] ?? 0}
+          hasSovereignOnBoard={
+            Object.values(gameState.pieces).some(
+              (p) => p.house === currentHouse && p.type === 'SO' && p.location === 'board'
+            )
+          }
+          phase={gameState.phase}
+          setupCount={gameState.setupCount[currentHouse] ?? 0}
+        />
+      </div>
 
       {/* Setup / Game Mode Modal */}
       {isSetupOpen && (

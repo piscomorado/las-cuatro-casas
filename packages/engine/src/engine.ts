@@ -28,10 +28,19 @@ export function initGame(options?: {
   id?: string;
   seed?: number;
   houses?: readonly House[];
+  startingHouseIndex?: number;
+  randomStart?: boolean;
 }): GameState {
   const activeHouses = options?.houses ?? HOUSES;
   const seed = options?.seed ?? 1001;
   const id = options?.id ?? `game-${seed}`;
+
+  let startingIdx = 0;
+  if (options?.startingHouseIndex !== undefined) {
+    startingIdx = options.startingHouseIndex % activeHouses.length;
+  } else if (options?.randomStart) {
+    startingIdx = Math.floor(Math.random() * activeHouses.length);
+  }
 
   const pieces: Record<string, Piece> = {};
   for (const house of activeHouses) {
@@ -74,7 +83,7 @@ export function initGame(options?: {
     turn: 0,
     activeHouses,
     aliveHouses: [...activeHouses],
-    currentHouseIndex: 0,
+    currentHouseIndex: startingIdx,
     ownTurns,
     pieces,
     board: {},
@@ -438,7 +447,7 @@ export function applyAction(state: GameState, action: Action): ActionResult {
       } else {
         // All houses finished setup phase! Transition to 'play' phase
         nextPhase = 'play';
-        nextHouseIndex = 0; // Red starts standard play
+        nextHouseIndex = 0; // Rotate starting play phase
         events.push({ type: 'SetupCompleted' });
       }
     }

@@ -61,53 +61,46 @@ export const HandTray: React.FC<HandTrayProps> = ({
 
   return (
     <div
-      className={`rounded-xl border p-3 transition-all duration-300 ${config.bg} ${config.border} ${
-        isActive ? `${config.activeGlow} shadow-lg scale-[1.01]` : 'opacity-70'
+      className={`rounded-2xl border p-3 backdrop-blur-xl transition-all duration-300 shadow-2xl ${config.bg} ${config.border} ${
+        isActive ? `${config.activeGlow} ring-2` : 'opacity-80'
       }`}
     >
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <span className="font-bold text-sm tracking-wide">{config.name}</span>
+          <span className="font-title font-bold text-sm tracking-wide text-white">{config.name}</span>
           {isActive && (
-            <span className="text-[10px] uppercase font-extrabold px-1.5 py-0.5 rounded bg-white/20 text-white animate-pulse">
+            <span className="text-[10px] uppercase font-extrabold px-2 py-0.5 rounded-full bg-white/20 text-white animate-pulse">
               Turno Activo
             </span>
           )}
         </div>
-        <span className="text-xs text-slate-400">
-          {isSetup ? `Apertura: ${setupCount}/3 fichas` : `Turno ${ownTurn + 1} de tu casa`} • {handPieces.length} fichas
+        <span className="text-xs text-slate-300 font-medium">
+          {isSetup ? `Apertura (${setupCount + 1}/3)` : `${handPieces.length} fichas en reserva`}
         </span>
       </div>
 
       {/* Clear contextual badge according to turn / phase */}
       {isActive && isSetup && (
-        <div className="mb-2 text-xs font-semibold text-emerald-300 bg-emerald-950/70 border border-emerald-600/60 rounded-lg px-2.5 py-1.5 flex items-center gap-2">
+        <div className="mb-2 text-xs font-semibold text-emerald-200 bg-emerald-950/80 border border-emerald-500/40 rounded-xl px-3 py-1.5 flex items-center gap-2">
           <span>🚀</span>
           <span>
-            {setupCount === 0 && 'Apertura: Coloca tu 1.ª ficha (Soberano u otra).'}
-            {setupCount === 1 && 'Apertura: Coloca tu 2.ª ficha contigua a tus fichas.'}
+            {setupCount === 0 && 'Coloca tu 1.ª ficha (Soberano u otra).'}
+            {setupCount === 1 && 'Coloca tu 2.ª ficha contigua a tus fichas.'}
             {setupCount === 2 && !hasSovereignOnBoard && '¡Última ficha de apertura! Es obligatorio colocar al Soberano 👑'}
-            {setupCount === 2 && hasSovereignOnBoard && 'Apertura: Coloca tu 3.ª y última ficha inicial.'}
+            {setupCount === 2 && hasSovereignOnBoard && 'Coloca tu 3.ª y última ficha inicial.'}
           </span>
         </div>
       )}
 
       {isActive && !isSetup && sovereignMustBePlaced && (
-        <div className="mb-2 text-xs font-semibold text-amber-300 bg-amber-950/70 border border-amber-600/60 rounded-lg px-2.5 py-1.5 flex items-center gap-2 animate-bounce">
+        <div className="mb-2 text-xs font-semibold text-amber-200 bg-amber-950/80 border border-amber-500/50 rounded-xl px-3 py-1.5 flex items-center gap-2 animate-bounce">
           <span>👑</span>
-          <span>4.º turno de tu casa: ¡Es obligatorio colocar al Soberano!</span>
-        </div>
-      )}
-
-      {isActive && !isSetup && !hasSovereignOnBoard && !sovereignMustBePlaced && (
-        <div className="mb-2 text-[11px] text-slate-300 bg-slate-900/80 border border-slate-700/80 rounded-lg px-2.5 py-1.5 flex items-center gap-2">
-          <span className="text-amber-400 font-bold">Turno {ownTurn + 1}/4:</span>
-          <span>Puedes colocar cualquier ficha (el Soberano es obligatorio a más tardar en el 4.º turno).</span>
+          <span>4.º turno: ¡Es obligatorio colocar al Soberano!</span>
         </div>
       )}
 
       {/* Hand piece slots */}
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2 justify-center sm:justify-start">
         {Object.entries(grouped).map(([type, pieceList]) => {
           const piece = pieceList[0]!;
           const isSelected = selectedPiece?.location === 'hand' && selectedPiece?.type === piece.type && selectedPiece?.house === house;
