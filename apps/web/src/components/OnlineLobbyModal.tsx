@@ -157,7 +157,7 @@ export const OnlineLobbyModal: React.FC<OnlineLobbyModalProps> = ({
               {/* WhatsApp Quick Share */}
               <a
                 href={`https://api.whatsapp.com/send?text=${encodeURIComponent(
-                  `¡Te desafío a jugar Las Cuatro Casas! Entra con este enlace para comenzar la partida: ${shareableUrl}`
+                  `¡Te desafío a jugar Savage Gods! Entra con este enlace para comenzar la partida: ${shareableUrl}`
                 )}`}
                 target="_blank"
                 rel="noreferrer"

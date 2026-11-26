@@ -1,4 +1,4 @@
-# Las Cuatro Casas
+# Savage Gods
 
 Juego de estrategia abstracta digital para 2 a 4 jugadores sobre un tablero hexagonal.
 

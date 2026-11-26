@@ -1,5 +1,5 @@
 /**
- * Web Audio API procedural sound synthesizer for Las Cuatro Casas.
+ * Web Audio API procedural sound synthesizer for Savage Gods.
  * Zero external audio files (0 KB network overhead), instant latency, rich tactile feedback.
  */
 

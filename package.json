@@ -2,7 +2,7 @@
   "name": "las-cuatro-casas",
   "private": true,
   "version": "0.0.0",
-  "description": "Las Cuatro Casas — juego de estrategia abstracta digital para 2-4 jugadores",
+  "description": "Savage Gods — juego de estrategia abstracta digital para 2-4 jugadores",
   "scripts": {
     "build": "pnpm --filter=@lcch/engine build && pnpm --filter=@lcch/shared build && pnpm --filter=@lcch/web build",
     "test": "turbo run test",

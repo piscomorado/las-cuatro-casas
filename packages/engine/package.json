@@ -1,7 +1,7 @@
 {
   "name": "@lcch/engine",
   "version": "0.1.0",
-  "description": "Deterministic rules engine for Las Cuatro Casas",
+  "description": "Deterministic rules engine for Savage Gods",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",

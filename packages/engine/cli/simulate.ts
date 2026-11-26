@@ -251,7 +251,7 @@ const args = process.argv.slice(2);
 const gamesArg = args.find((a) => a.startsWith('--games=') || a === '-g');
 const gamesVal = gamesArg ? Number(args[args.indexOf(gamesArg) + 1] || gamesArg.split('=')[1]) : 50;
 
-console.log(`\n=== INICIANDO SIMULACIÓN DE ${gamesVal} PARTIDAS (Las Cuatro Casas) ===\n`);
+console.log(`\n=== INICIANDO SIMULACIÓN DE ${gamesVal} PARTIDAS (Savage Gods) ===\n`);
 const result = runSimulation(gamesVal, 1001);
 
 console.log('Resultados de la Simulación:');

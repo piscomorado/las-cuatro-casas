@@ -1,7 +1,7 @@
 {
   "name": "@lcch/shared",
   "version": "0.1.0",
-  "description": "Shared types and models for Las Cuatro Casas",
+  "description": "Shared types and models for Savage Gods",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {

@@ -121,7 +121,7 @@ export const ManualModal: React.FC<ManualModalProps> = ({
             <span className="text-2xl">📜</span>
             <div>
               <h2 className="text-base sm:text-lg font-black text-white tracking-wide font-cinzel">
-                MANUAL OFICIAL — LAS CUATRO CASAS
+                MANUAL OFICIAL — SAVAGE GODS
               </h2>
               <p className="text-[11px] text-slate-400">Reglamento v0.4 con demostración gráfica interactiva</p>
             </div>

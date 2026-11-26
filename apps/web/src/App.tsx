@@ -15,6 +15,7 @@ import { HexBoard, LastMoveInfo } from './components/HexBoard';
 import { HandTray } from './components/HandTray';
 import { ManualModal } from './components/ManualModal';
 import { OnlineLobbyModal } from './components/OnlineLobbyModal';
+import { SavageGodsIcon } from './components/SavageGodsIcon';
 import { sounds } from './utils/soundEffects';
 import { OnlineMultiplayerManager, OnlineRole, PlayerInfo } from './utils/onlineMultiplayer';
 
@@ -316,16 +317,11 @@ export const App: React.FC = () => {
         <header className="absolute top-4 left-6 right-6 z-20 flex items-center justify-between pointer-events-none">
           {/* Top Left Title Header */}
           <div className="flex items-center gap-3">
-            <div className="pointer-events-auto flex items-center gap-3 bg-slate-900/80 backdrop-blur-md border border-slate-800/80 rounded-2xl px-5 py-2.5 shadow-2xl">
-              <span className="text-2xl filter drop-shadow">⚔️</span>
-              <div>
-                <h1 className="font-title font-black text-xl tracking-wider uppercase bg-gradient-to-r from-amber-300 via-rose-300 to-indigo-300 bg-clip-text text-transparent">
-                  LAS CUATRO CASAS
-                </h1>
-                <p className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold">
-                  Juego de Estrategia Abstracta
-                </p>
-              </div>
+            <div className="pointer-events-auto flex items-center gap-3 bg-slate-900/90 backdrop-blur-md border border-slate-800/80 rounded-2xl px-5 py-2.5 shadow-2xl">
+              <SavageGodsIcon size={32} className="filter drop-shadow-[0_0_8px_rgba(255,255,255,0.35)]" color="#ffffff" />
+              <h1 className="font-title font-black text-2xl tracking-widest uppercase text-white drop-shadow-[0_2px_10px_rgba(255,255,255,0.25)]">
+                SAVAGE GODS
+              </h1>
             </div>
 
             {/* Online Status Pill */}
