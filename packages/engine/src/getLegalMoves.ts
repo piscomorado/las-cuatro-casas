@@ -319,11 +319,25 @@ export function getLegalMoves(state: GameState, house: House): LegalMovesResult 
     }
   }
 
-  // If no legal moves or placements exist, house must Pass
-  const canPass = actions.length === 0;
-  if (canPass) {
-    actions.push({ type: 'Pass', house });
+  // Deduplicate equivalent actions
+  const uniqueActions: Action[] = [];
+  const seenActionKeys = new Set<string>();
+  for (const act of actions) {
+    let key = `${act.type}:${act.house}`;
+    if ('pieceId' in act) key += `:${act.pieceId}`;
+    if ('to' in act) key += `:${coordToKey(act.to)}`;
+    if ('targetPieceId' in act) key += `:${act.targetPieceId}`;
+    if (!seenActionKeys.has(key)) {
+      seenActionKeys.add(key);
+      uniqueActions.push(act);
+    }
   }
 
-  return { actions, canPass };
+  // If no legal moves or placements exist, house must Pass
+  const canPass = uniqueActions.length === 0;
+  if (canPass) {
+    uniqueActions.push({ type: 'Pass', house });
+  }
+
+  return { actions: uniqueActions, canPass };
 }

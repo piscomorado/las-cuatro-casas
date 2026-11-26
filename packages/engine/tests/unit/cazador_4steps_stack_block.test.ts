@@ -101,4 +101,39 @@ describe('Manual v0.4 §6 & Hoja única: Cazador (CZ)', () => {
     // Cazador is surrounded and all 6 straight lines have stack >= 2, cannot jump!
     expect(moves.length).toBe(0);
   });
+
+  it('can jump horizontally over 2 pieces (user scenario: 3 steps total)', () => {
+    let state = initGame();
+    // Cazador at (0,0)
+    // (1,0) green Cazador
+    // (2,0) green Sovereign
+    // (3,0) empty, touching formation via (2,0)
+    // support hive piece at (0,1)
+    const newBoard: Record<CellKey, string[]> = {
+      '0,0': ['blue-CZ-4'],
+      '1,0': ['green-CZ-1'],
+      '2,0': ['green-SO-1'],
+      '0,1': ['blue-SO-1'],
+    };
+
+    state = { ...state, board: newBoard };
+    const moves = getCazadorMoves({ q: 0, r: 0 }, state, new Set(['0,0', '1,0', '2,0', '0,1']));
+    const reached30 = moves.some((m) => m.q === 3 && m.r === 0);
+    expect(reached30).toBe(true);
+  });
+
+  it('can make a 1-step move to an adjacent empty space touching the hive', () => {
+    let state = initGame();
+    // Cazador at (0,0), hive piece at (1,0)
+    // (0,1) is empty and touches (0,0) and (1,0)
+    const newBoard: Record<CellKey, string[]> = {
+      '0,0': ['blue-CZ-4'],
+      '1,0': ['blue-SO-1'],
+    };
+
+    state = { ...state, board: newBoard };
+    const moves = getCazadorMoves({ q: 0, r: 0 }, state, new Set(['0,0', '1,0']));
+    const reached01 = moves.some((m) => m.q === 0 && m.r === 1);
+    expect(reached01).toBe(true);
+  });
 });

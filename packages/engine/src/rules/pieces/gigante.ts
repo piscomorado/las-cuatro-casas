@@ -1,5 +1,5 @@
 import { AxialCoord, CellKey, GameState } from '../../types.js';
-import { getNeighbors, coordToKey } from '../../coords.js';
+import { getNeighbors, coordToKey, gateOk } from '../../coords.js';
 import { isOneHive } from '../connectivity.js';
 
 export interface GiganteMoves {
@@ -45,7 +45,8 @@ export function getGiganteMoves(
     if (!isOnStack) {
       // GI is on the floor
       if (nbStackHeight === 0) {
-        // Slide to empty space (must touch remaining hive)
+        // Slide to empty space (must respect physical passage and touch remaining hive)
+        if (!gateOk(coord, nb, occupiedKeys)) continue;
         const nextHive = new Set(hiveWithoutMe).add(nbKey);
         if ((!isBridge || isOneHive(nextHive)) && isOneHive(nextHive)) {
           result.slideFloor.push(nb);
