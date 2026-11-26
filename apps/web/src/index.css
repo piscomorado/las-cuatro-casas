@@ -94,31 +94,5 @@ html, body, #root {
   transform-origin: center;
 }
 
-/* Hitstop Micro-Vibration (Intense Energy Jitter during Slow-Motion) */
-@keyframes hitstopJitter {
-  0% { transform: translate(0, 0) scale(1.08); }
-  20% { transform: translate(-3.5px, 2.5px) scale(1.10); }
-  40% { transform: translate(3.5px, -2.5px) scale(1.07); }
-  60% { transform: translate(-2.5px, -2px) scale(1.09); }
-  80% { transform: translate(2.5px, 2.5px) scale(1.11); }
-  100% { transform: translate(0, 0) scale(1.08); }
-}
-
-.animate-hitstop-jitter {
-  animation: hitstopJitter 0.08s infinite ease-in-out;
-  transform-origin: center;
-}
-
-/* Explosive Seismic Shockwave Ring */
-@keyframes shockwaveExpand {
-  0% { transform: scale(0.6); opacity: 0.95; }
-  100% { transform: scale(2.4); opacity: 0; }
-}
-
-.animate-shockwave {
-  animation: shockwaveExpand 0.5s ease-out forwards;
-  transform-origin: center;
-}
-
 
 

@@ -10,11 +10,6 @@ import {
   HOUSES,
   getBotAction,
   BotDifficulty,
-  getNeighbors,
-  coordToKey,
-  keyToCoord,
-  CellKey,
-  PieceType,
 } from '@lcch/engine';
 import { HexBoard, LastMoveInfo } from './components/HexBoard';
 import { HandTray } from './components/HandTray';
@@ -22,7 +17,6 @@ import { ManualModal } from './components/ManualModal';
 import { OnlineLobbyModal } from './components/OnlineLobbyModal';
 import { SavageGodsIcon } from './components/SavageGodsIcon';
 import { ComicClashEvent } from './components/ComicClashOverlay';
-import { hexToPixel, HEX_SIZE } from './utils/hexMath';
 import { sounds } from './utils/soundEffects';
 import { OnlineMultiplayerManager, OnlineRole, PlayerInfo } from './utils/onlineMultiplayer';
 
@@ -53,77 +47,7 @@ export const App: React.FC = () => {
   const [clashEvent, setClashEvent] = useState<ComicClashEvent | null>(null);
   const [comicAnimationsEnabled, setComicAnimationsEnabled] = useState(true);
 
-  const checkSovereignClash = (action: Action, prevState: GameState, nextState: GameState): ComicClashEvent | null => {
-    if (!('to' in action) || !action.to) return null;
-    const destCoord = action.to;
-    const destPixel = hexToPixel(destCoord, HEX_SIZE);
-
-    let actingPieceType: PieceType = 'SO';
-    if ('pieceId' in action && prevState.pieces[action.pieceId]) {
-      actingPieceType = prevState.pieces[action.pieceId]!.type;
-    }
-
-    for (const p of Object.values(nextState.pieces)) {
-      if (
-        p.type === 'SO' &&
-        p.location === 'board' &&
-        p.cellKey &&
-        nextState.aliveHouses.includes(p.house)
-      ) {
-        const soCoord = keyToCoord(p.cellKey);
-        const isAdj = getNeighbors(soCoord).some((nb) => nb.q === destCoord.q && nb.r === destCoord.r);
-        if (isAdj) {
-          const occupied = new Set(
-            (Object.keys(nextState.board) as CellKey[]).filter((k) => (nextState.board[k]?.length ?? 0) > 0)
-          );
-          let count = 0;
-          for (const nb of getNeighbors(soCoord)) {
-            if (occupied.has(coordToKey(nb))) count++;
-          }
-
-          const clash: ComicClashEvent = {
-            id: `${Date.now()}-${p.cellKey}`,
-            attackerType: actingPieceType,
-            attackerHouse: action.house,
-            targetHouse: p.house,
-            fromPixel: 'from' in action && action.from ? hexToPixel(action.from, HEX_SIZE) : undefined,
-            toPixel: destPixel,
-            sovereignPixel: hexToPixel(soCoord, HEX_SIZE),
-            siegeCount: count,
-          };
-
-          // Sound triggers based on comic action type
-          if (actingPieceType === 'CZ') {
-            sounds.playSwordSlash();
-          } else if (actingPieceType === 'BS') {
-            sounds.playBeastClaw();
-          } else if (actingPieceType === 'GI') {
-            sounds.playGiantStomp();
-          }
-
-          if (count === 5) {
-            sounds.playCriticalAlert();
-          }
-
-          return clash;
-        }
-      }
-    }
-
-    // Cazador signature energy slash triggers on any jump move as well
-    if (actingPieceType === 'CZ' && action.type === 'MovePiece') {
-      sounds.playSwordSlash();
-      return {
-        id: `${Date.now()}-${coordToKey(destCoord)}`,
-        attackerType: 'CZ',
-        attackerHouse: action.house,
-        fromPixel: action.from ? hexToPixel(action.from, HEX_SIZE) : undefined,
-        toPixel: destPixel,
-        sovereignPixel: undefined,
-        siegeCount: 0,
-      };
-    }
-
+  const checkSovereignClash = (_action: Action, _prevState: GameState, _nextState: GameState): ComicClashEvent | null => {
     return null;
   };
 
