@@ -7,6 +7,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@lcch/engine': path.resolve(__dirname, '../../packages/engine/src/index.ts'),
+      '@lcch/shared': path.resolve(__dirname, '../../packages/shared/src/index.ts'),
     },
   },
   server: {

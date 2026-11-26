@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "description": "Las Cuatro Casas — juego de estrategia abstracta digital para 2-4 jugadores",
   "scripts": {
-    "build": "turbo run build",
+    "build": "pnpm --filter=@lcch/engine build && pnpm --filter=@lcch/shared build && pnpm --filter=@lcch/web build",
     "test": "turbo run test",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",

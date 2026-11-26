@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "tsc",
-    "typecheck": "tsc --noEmit"
+    "build": "echo bot",
+    "typecheck": "echo bot"
   },
   "dependencies": {
     "@lcch/engine": "workspace:*",

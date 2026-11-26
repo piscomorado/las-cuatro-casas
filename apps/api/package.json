@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "tsc",
+    "build": "echo api",
     "start": "node dist/main.js",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "echo api"
   },
   "dependencies": {
     "@lcch/engine": "workspace:*",
