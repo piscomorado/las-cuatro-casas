@@ -26,7 +26,7 @@ const HOUSE_COLORS: Record<House, { primary: string; secondary: string; glow: st
 };
 
 const TOTAL_FRAMES = 12;
-const FRAME_RENDER_SIZE = 280; // Rendered width/height on board
+const FRAME_RENDER_SIZE = 130; // Proportional to hex tile diameter (~84px) for retina crispness
 const HALF_SIZE = FRAME_RENDER_SIZE / 2;
 
 /**
@@ -122,10 +122,11 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
               preserveAspectRatio="none"
               style={{
                 filter: isClimax
-                  ? `drop-shadow(0 0 16px ${colors.glow}) drop-shadow(0 0 6px #ffffff)`
-                  : `drop-shadow(0 0 8px rgba(245, 158, 11, 0.45))`,
-                transform: `scale(${isClimax ? 1.06 : 1.0})`,
-                transition: 'transform 0.05s ease-out',
+                  ? `drop-shadow(0 0 6px ${colors.glow})`
+                  : 'none',
+                transform: `scale(${isClimax ? 1.05 : 1.0})`,
+                transition: 'transform 0.04s ease-out',
+                imageRendering: '-webkit-optimize-contrast',
               }}
             />
           </g>
