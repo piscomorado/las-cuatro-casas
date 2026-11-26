@@ -124,7 +124,7 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
         </g>
       )}
 
-      {/* 3. Harmonized Bronze & Gold 12-Frame Animation */}
+      {/* 3. Harmonized Bronze & Gold 12-Frame Animation for Cazador */}
       {attackerType === 'CZ' && (
         <g transform={`translate(${midX}, ${midY})`}>
           <g clipPath="url(#cazador-frame-clip)">
@@ -141,6 +141,87 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
               }}
             />
           </g>
+        </g>
+      )}
+
+      {/* 4. Kinetic Shockwave for other piece types awaiting their custom 12-frame strips */}
+      {attackerType !== 'CZ' && (
+        <g transform={`translate(${midX}, ${midY})`}>
+          <circle cx="0" cy="0" r="48" fill="#020617" opacity="0.65" />
+          <circle
+            cx="0"
+            cy="0"
+            r={frameIndex < 6 ? 32 + frameIndex * 6 : 72}
+            fill="none"
+            stroke="#f59e0b"
+            strokeWidth="3"
+            opacity={frameIndex < 8 ? 0.85 : 0.3}
+          />
+        </g>
+      )}
+
+      {/* 5. Progressive Tension Siege Badges (Asedio 4/6, Cerco 5/6, Conquista 6/6) */}
+      {clash.siegeCount !== undefined && clash.siegeCount >= 4 && sovereignPixel && (
+        <g
+          transform={`translate(${sovereignPixel.x}, ${sovereignPixel.y + 55})`}
+          className="select-none animate-comic-badge"
+        >
+          <defs>
+            <filter id="badge-glow-shadow" x="-30%" y="-30%" width="160%" height="160%">
+              <feDropShadow
+                dx="0"
+                dy="4"
+                stdDeviation="6"
+                floodColor={
+                  clash.siegeCount === 6
+                    ? '#16a34a'
+                    : clash.siegeCount === 5
+                    ? '#dc2626'
+                    : '#d97706'
+                }
+                floodOpacity="0.85"
+              />
+            </filter>
+          </defs>
+          <rect
+            x="-78"
+            y="-16"
+            width="156"
+            height="32"
+            rx="16"
+            fill="#050811"
+            stroke={
+              clash.siegeCount === 6
+                ? '#22c55e'
+                : clash.siegeCount === 5
+                ? '#ef4444'
+                : '#f59e0b'
+            }
+            strokeWidth="3"
+            filter="url(#badge-glow-shadow)"
+          />
+          <text
+            x="0"
+            y="5"
+            textAnchor="middle"
+            fill={
+              clash.siegeCount === 6
+                ? '#4ade80'
+                : clash.siegeCount === 5
+                ? '#fca5a5'
+                : '#fde047'
+            }
+            fontFamily="'Cinzel Decorative', 'Cinzel', Impact, sans-serif"
+            fontSize="12.5"
+            fontWeight="900"
+            letterSpacing="1"
+          >
+            {clash.siegeCount === 6
+              ? '👑 ¡CONQUISTA!'
+              : clash.siegeCount === 5
+              ? '⚠️ ¡CERCO 5/6!'
+              : '⚡ ASEDIO 4/6'}
+          </text>
         </g>
       )}
     </g>

@@ -10,6 +10,10 @@ import {
   HOUSES,
   getBotAction,
   BotDifficulty,
+  getNeighbors,
+  coordToKey,
+  keyToCoord,
+  PieceType,
 } from '@lcch/engine';
 import { HexBoard, LastMoveInfo } from './components/HexBoard';
 import { HandTray } from './components/HandTray';
@@ -48,27 +52,69 @@ export const App: React.FC = () => {
   const [comicAnimationsEnabled, setComicAnimationsEnabled] = useState(true);
   const [logoExpanded, setLogoExpanded] = useState(false);
 
-  const checkSovereignClash = (action: Action, prevState: GameState, _nextState: GameState): ComicClashEvent | null => {
-    if (!('to' in action) || !action.to) return null;
+  const checkSovereignClash = (action: Action, prevState: GameState, nextState: GameState): ComicClashEvent | null => {
+    // 1. MUST be a piece already in play moving (MovePiece, NOT PlacePiece)
+    if (action.type !== 'MovePiece' || !('to' in action) || !action.to) return null;
+
     const destCoord = action.to;
     const destPixel = hexToPixel(destCoord, HEX_SIZE);
 
-    let actingPieceType = 'SO';
+    let actingPieceType: PieceType = 'SO';
     if ('pieceId' in action && prevState.pieces[action.pieceId]) {
       actingPieceType = prevState.pieces[action.pieceId]!.type;
     }
 
-    if (actingPieceType === 'CZ' && action.type === 'MovePiece') {
-      sounds.playSwordSlash();
-      return {
-        id: `${Date.now()}`,
-        attackerType: 'CZ',
-        attackerHouse: action.house,
-        fromPixel: action.from ? hexToPixel(action.from, HEX_SIZE) : undefined,
-        toPixel: destPixel,
-        sovereignPixel: undefined,
-        siegeCount: 0,
-      };
+    // 2. Check if destCoord touches (is adjacent to) ANY ENEMY SOVEREIGN on the board
+    for (const p of Object.values(nextState.pieces)) {
+      if (
+        p.type === 'SO' &&
+        p.location === 'board' &&
+        p.cellKey &&
+        p.house !== action.house && // Enemy Sovereign
+        nextState.aliveHouses.includes(p.house)
+      ) {
+        const soCoord = keyToCoord(p.cellKey);
+        const isNeighbor = getNeighbors(soCoord).some((nb) => nb.q === destCoord.q && nb.r === destCoord.r);
+
+        if (isNeighbor) {
+          // Count occupied neighbor cells around this besieged Sovereign
+          let siegeCount = 0;
+          for (const nb of getNeighbors(soCoord)) {
+            const key = coordToKey(nb);
+            const stack = nextState.board[key];
+            if (stack && stack.length > 0) {
+              siegeCount++;
+            }
+          }
+
+          // Sound tension progression based on siege count
+          if (siegeCount === 6) {
+            sounds.playHouseFell();
+          } else if (siegeCount === 5) {
+            sounds.playCriticalAlert();
+            if (actingPieceType === 'CZ') sounds.playSwordSlash();
+            else if (actingPieceType === 'BS') sounds.playBeastClaw();
+            else if (actingPieceType === 'GI') sounds.playGiantStomp();
+            else sounds.playSlide();
+          } else {
+            if (actingPieceType === 'CZ') sounds.playSwordSlash();
+            else if (actingPieceType === 'BS') sounds.playBeastClaw();
+            else if (actingPieceType === 'GI') sounds.playGiantStomp();
+            else sounds.playSlide();
+          }
+
+          return {
+            id: `${Date.now()}-${p.cellKey}`,
+            attackerType: actingPieceType,
+            attackerHouse: action.house,
+            targetHouse: p.house,
+            fromPixel: action.from ? hexToPixel(action.from, HEX_SIZE) : undefined,
+            toPixel: destPixel,
+            sovereignPixel: hexToPixel(soCoord, HEX_SIZE),
+            siegeCount,
+          };
+        }
+      }
     }
 
     return null;
