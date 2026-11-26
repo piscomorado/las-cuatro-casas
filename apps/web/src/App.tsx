@@ -17,6 +17,7 @@ import { ManualModal } from './components/ManualModal';
 import { OnlineLobbyModal } from './components/OnlineLobbyModal';
 import { SavageGodsIcon } from './components/SavageGodsIcon';
 import { ComicClashEvent } from './components/ComicClashOverlay';
+import { hexToPixel, HEX_SIZE } from './utils/hexMath';
 import { sounds } from './utils/soundEffects';
 import { OnlineMultiplayerManager, OnlineRole, PlayerInfo } from './utils/onlineMultiplayer';
 
@@ -47,7 +48,29 @@ export const App: React.FC = () => {
   const [clashEvent, setClashEvent] = useState<ComicClashEvent | null>(null);
   const [comicAnimationsEnabled, setComicAnimationsEnabled] = useState(true);
 
-  const checkSovereignClash = (_action: Action, _prevState: GameState, _nextState: GameState): ComicClashEvent | null => {
+  const checkSovereignClash = (action: Action, prevState: GameState, _nextState: GameState): ComicClashEvent | null => {
+    if (!('to' in action) || !action.to) return null;
+    const destCoord = action.to;
+    const destPixel = hexToPixel(destCoord, HEX_SIZE);
+
+    let actingPieceType = 'SO';
+    if ('pieceId' in action && prevState.pieces[action.pieceId]) {
+      actingPieceType = prevState.pieces[action.pieceId]!.type;
+    }
+
+    if (actingPieceType === 'CZ' && action.type === 'MovePiece') {
+      sounds.playSwordSlash();
+      return {
+        id: `${Date.now()}`,
+        attackerType: 'CZ',
+        attackerHouse: action.house,
+        fromPixel: action.from ? hexToPixel(action.from, HEX_SIZE) : undefined,
+        toPixel: destPixel,
+        sovereignPixel: undefined,
+        siegeCount: 0,
+      };
+    }
+
     return null;
   };
 
