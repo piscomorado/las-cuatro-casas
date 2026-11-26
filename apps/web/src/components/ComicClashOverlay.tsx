@@ -62,15 +62,15 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
     setFrameIndex(0);
 
     // Dynamic frame timings with SLOW-MOTION HITSTOP on the central climax frames:
-    // Frame 0: 45ms (instant spark charge)
-    // Frame 1: 50ms (cyan curve velocity)
-    // Frame 2: 60ms (crossing dual arcs)
-    // Frame 3: 320ms (SLOWMOTION FREEZE 1: Explosive Starburst X with intense jitter & radiant aura)
-    // Frame 4: 260ms (SLOWMOTION FREEZE 2: Circular Shockwave X with seismic ring & vibration)
-    // Frame 5: 75ms (residual vortex dispersing)
-    // Frame 6: 65ms (expanding shards)
-    // Frame 7: 60ms (dissolving embers)
-    const frameDurations = [45, 50, 60, 320, 260, 75, 65, 60];
+    // Frame 0: 50ms (instant spark charge)
+    // Frame 1: 55ms (golden velocity crescent)
+    // Frame 2: 65ms (dual crossing arcs)
+    // Frame 3: 300ms (SLOWMOTION CLIMAX 1: 4-pointed Golden Cross-Star with kinetic jitter)
+    // Frame 4: 240ms (SLOWMOTION CLIMAX 2: Shattered Diamond Burst with shockwave ring)
+    // Frame 5: 70ms (dispersing directional shards)
+    // Frame 6: 60ms (trailing diamond specks)
+    // Frame 7: 55ms (dissolving final sparks)
+    const frameDurations = [50, 55, 65, 300, 240, 70, 60, 55];
     let cur = 0;
     let timerId: any;
 
@@ -83,7 +83,7 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
         timerId = setTimeout(() => {
           setVisible(false);
           if (onAnimationEnd) onAnimationEnd();
-        }, 100);
+        }, 80);
       }
     };
 
@@ -111,73 +111,58 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
   return (
     <g key={clash.id} pointerEvents="none" className="select-none z-50">
       <defs>
-        <filter id="cazador-hit-glow" x="-60%" y="-60%" width="220%" height="220%">
-          <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="blur1" />
-          <feGaussianBlur in="SourceGraphic" stdDeviation="16" result="blur2" />
+        <filter id="cazador-hit-glow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blur" />
           <feMerge>
-            <feMergeNode in="blur2" />
-            <feMergeNode in="blur1" />
+            <feMergeNode in="blur" />
             <feMergeNode in="SourceGraphic" />
           </feMerge>
         </filter>
       </defs>
 
       {/* ============================================================== */}
-      {/* 1. CAZADOR (CZ) — SEQUENTIAL ANIME SPRITE WITH SLOW-MO HITSTOP */}
+      {/* 1. CAZADOR (CZ) — CLEAN STYLIZED VECTOR SPRITE WITH HITSTOP    */}
       {/* ============================================================== */}
       {attackerType === 'CZ' && (
         <g transform={`translate(${midX}, ${midY})`}>
-          {/* Intense Slow-Motion Lighting Effects during Climax */}
+          {/* Crisp expanding shockwave ring during slow-motion impact */}
           {isClimaxHit && (
             <g pointerEvents="none">
-              {/* Expanding Shockwave Ring */}
               <circle
                 cx="0"
                 cy="0"
-                r="95"
+                r="85"
                 fill="none"
                 stroke={colors.primary}
-                strokeWidth="5"
+                strokeWidth="4"
                 className="animate-shockwave"
               />
-
-              {/* Radiant White Hot Core */}
               <circle
                 cx="0"
                 cy="0"
-                r="70"
+                r="45"
                 fill="#ffffff"
-                opacity="0.55"
-                filter="url(#cazador-hit-glow)"
-              />
-
-              {/* House Luminous Radiant Flare */}
-              <circle
-                cx="0"
-                cy="0"
-                r="150"
-                fill={colors.glow}
-                opacity="0.4"
+                opacity="0.3"
                 filter="url(#cazador-hit-glow)"
               />
             </g>
           )}
 
-          {/* Current animated frame with high-energy jitter vibration during slow-motion */}
+          {/* Current animated frame with micro-jitter during slow-motion */}
           <g className={isClimaxHit ? 'animate-hitstop-jitter' : ''}>
             <image
               href={CAZADOR_FRAMES[frameIndex]}
               xlinkHref={CAZADOR_FRAMES[frameIndex]}
-              x="-175"
-              y="-175"
-              width="350"
-              height="350"
+              x="-150"
+              y="-150"
+              width="300"
+              height="300"
               preserveAspectRatio="xMidYMid meet"
               style={{
                 filter: isClimaxHit
-                  ? `drop-shadow(0 0 25px #ffffff) drop-shadow(0 0 45px ${colors.glow})`
-                  : `drop-shadow(0 0 15px ${colors.glow})`,
-                transform: `scale(${isClimaxHit ? 1.1 : 1.0})`,
+                  ? `drop-shadow(0 0 18px ${colors.glow}) drop-shadow(0 0 8px #ffffff)`
+                  : `drop-shadow(0 0 10px ${colors.glow})`,
+                transform: `scale(${isClimaxHit ? 1.08 : 1.0})`,
                 transition: 'transform 0.04s ease-out',
               }}
             />
