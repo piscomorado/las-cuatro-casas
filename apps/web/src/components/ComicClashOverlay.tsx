@@ -26,7 +26,7 @@ const FRAME_RENDER_SIZE = 195; // Calibrated to reach halfway into surrounding a
 const HALF_SIZE = FRAME_RENDER_SIZE / 2;
 const BESTIA_RENDER_SIZE = 250; // Amplified vertical presence for Bestia claw tear
 const BESTIA_HALF_SIZE = BESTIA_RENDER_SIZE / 2;
-const GIGANTE_RENDER_SIZE = 240; // Colossal stone fist slam presence
+const GIGANTE_RENDER_SIZE = 270; // Colossal stone fist slam presence
 const GIGANTE_HALF_SIZE = GIGANTE_RENDER_SIZE / 2;
 
 /**
@@ -53,7 +53,7 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
     const frameDurations = isBestia
       ? [35, 40, 45, 50, 65, 140, 240, 320, 180, 85, 75, 65]
       : isGigante
-      ? [45, 50, 55, 60, 65, 90, 280, 240, 150, 85, 75, 65]
+      ? [75, 95, 115, 90, 85, 120, 280, 240, 140, 80, 70, 60]
       : [40, 45, 50, 50, 55, 60, 180, 260, 140, 65, 60, 55];
     let cur = 0;
     let timerId: any;
@@ -259,17 +259,30 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
       {/* 6. Colossal Ancient Stone Fist Slam for Gigante (GI) */}
       {attackerType === 'GI' && (
         <g transform={`translate(${midX}, ${midY})`}>
-          {/* Ground Impact Shockwave Ring & Crater Glow on Climax (Frames 6-7) */}
+          {/* Luminous Golden Ground Shockwave Rings on Climax (Frames 6-7) - Zero dark shadows */}
           {(frameIndex === 6 || frameIndex === 7) && (
-            <ellipse
-              cx="0"
-              cy="25"
-              rx="65"
-              ry="32"
-              fill="#030712"
-              opacity={0.85}
-              filter="drop-shadow(0 0 25px rgba(245, 158, 11, 0.95)) drop-shadow(0 0 55px rgba(217, 119, 6, 0.7))"
-            />
+            <g>
+              <ellipse
+                cx="0"
+                cy="32"
+                rx={frameIndex === 6 ? 72 : 98}
+                ry={frameIndex === 6 ? 30 : 42}
+                fill="none"
+                stroke="#f59e0b"
+                strokeWidth={frameIndex === 6 ? '3.5' : '2'}
+                opacity={frameIndex === 6 ? 0.9 : 0.5}
+                filter="drop-shadow(0 0 16px rgba(245, 158, 11, 0.95))"
+              />
+              <circle
+                cx="0"
+                cy="32"
+                r={frameIndex === 6 ? 42 : 64}
+                fill="none"
+                stroke="#fbbf24"
+                strokeWidth="2"
+                opacity={frameIndex === 6 ? 0.8 : 0.4}
+              />
+            </g>
           )}
           <g clipPath="url(#gigante-frame-clip)">
             <image
@@ -283,7 +296,7 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
                 opacity: 1,
                 imageRendering: 'auto',
                 filter:
-                  'drop-shadow(0 0 16px rgba(245, 158, 11, 0.9)) drop-shadow(0 0 35px rgba(180, 83, 9, 0.6)) contrast(1.15) brightness(1.1)',
+                  'drop-shadow(0 0 18px rgba(245, 158, 11, 0.95)) drop-shadow(0 0 38px rgba(217, 119, 6, 0.65)) contrast(1.18) brightness(1.15)',
               }}
             />
           </g>
