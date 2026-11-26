@@ -26,7 +26,7 @@ const FRAME_RENDER_SIZE = 195; // Calibrated to reach halfway into surrounding a
 const HALF_SIZE = FRAME_RENDER_SIZE / 2;
 const BESTIA_RENDER_SIZE = 250; // Amplified vertical presence for Bestia claw tear
 const BESTIA_HALF_SIZE = BESTIA_RENDER_SIZE / 2;
-const GIGANTE_RENDER_SIZE = 270; // Colossal stone fist slam presence
+const GIGANTE_RENDER_SIZE = 285; // Colossal Runic Obsidian War Hammer presence
 const GIGANTE_HALF_SIZE = GIGANTE_RENDER_SIZE / 2;
 
 /**
@@ -47,13 +47,13 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
     setVisible(true);
     setFrameIndex(0);
 
-    // Natural 12-Frame Rhythm with dedicated slow-motion tear hold for Bestia (BS) and seismic hold for Gigante (GI):
+    // Natural 12-Frame Rhythm with dedicated slow-motion tear hold for Bestia (BS) and seismic hammer hold for Gigante (GI):
     const isBestia = clash.attackerType === 'BS';
     const isGigante = clash.attackerType === 'GI';
     const frameDurations = isBestia
       ? [35, 40, 45, 50, 65, 140, 240, 320, 180, 85, 75, 65]
       : isGigante
-      ? [75, 95, 115, 90, 85, 120, 280, 240, 140, 80, 70, 60]
+      ? [100, 120, 130, 100, 90, 120, 340, 260, 160, 100, 80, 70]
       : [40, 45, 50, 50, 55, 60, 180, 260, 140, 65, 60, 55];
     let cur = 0;
     let timerId: any;
@@ -256,17 +256,17 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
         </g>
       )}
 
-      {/* 6. Colossal Ancient Stone Fist Slam for Gigante (GI) */}
+      {/* 6. Colossal Runic Obsidian War Hammer Slam for Gigante (GI) */}
       {attackerType === 'GI' && (
         <g transform={`translate(${midX}, ${midY})`}>
-          {/* Luminous Golden Ground Shockwave Rings on Climax (Frames 6-7) - Zero dark shadows */}
+          {/* Luminous Golden Ground Shockwave Rings on Climax (Frames 6-7) - Centered at ground impact, zero dark shadows */}
           {(frameIndex === 6 || frameIndex === 7) && (
             <g>
               <ellipse
                 cx="0"
-                cy="32"
-                rx={frameIndex === 6 ? 72 : 98}
-                ry={frameIndex === 6 ? 30 : 42}
+                cy="62"
+                rx={frameIndex === 6 ? 82 : 112}
+                ry={frameIndex === 6 ? 34 : 46}
                 fill="none"
                 stroke="#f59e0b"
                 strokeWidth={frameIndex === 6 ? '3.5' : '2'}
@@ -275,8 +275,8 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
               />
               <circle
                 cx="0"
-                cy="32"
-                r={frameIndex === 6 ? 42 : 64}
+                cy="62"
+                r={frameIndex === 6 ? 48 : 74}
                 fill="none"
                 stroke="#fbbf24"
                 strokeWidth="2"
@@ -296,7 +296,7 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
                 opacity: 1,
                 imageRendering: 'auto',
                 filter:
-                  'drop-shadow(0 0 18px rgba(245, 158, 11, 0.95)) drop-shadow(0 0 38px rgba(217, 119, 6, 0.65)) contrast(1.18) brightness(1.15)',
+                  'drop-shadow(0 0 20px rgba(245, 158, 11, 0.95)) drop-shadow(0 0 42px rgba(217, 119, 6, 0.65)) contrast(1.18) brightness(1.15)',
               }}
             />
           </g>
