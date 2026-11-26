@@ -190,9 +190,10 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
               y={-HALF_SIZE}
               width={FRAME_RENDER_SIZE * TOTAL_FRAMES}
               height={FRAME_RENDER_SIZE}
-              preserveAspectRatio="none"
               style={{
                 opacity: 1,
+                imageRendering: 'auto',
+                filter: 'drop-shadow(0 0 10px rgba(245, 158, 11, 0.4))',
               }}
             />
           </g>

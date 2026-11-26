@@ -292,6 +292,8 @@ export const App: React.FC = () => {
 
   const currentHouse = gameState.aliveHouses[gameState.currentHouseIndex] as House;
   const isCurrentPlayerBot = gameMode === 'bot' && currentHouse !== humanHouse;
+  const hasPiecesOnBoard = Object.values(gameState.pieces).some((p) => p.location === 'board');
+  const showCollapsedLogo = (hasPiecesOnBoard || gameState.turn > 1 || gameState.phase === 'play') && !logoExpanded;
 
   // Calculate legal actions for current house
   const legalMoveResult = useMemo(() => {
@@ -481,9 +483,9 @@ export const App: React.FC = () => {
             <div
               onClick={() => setLogoExpanded(!logoExpanded)}
               className="pointer-events-auto flex items-center transition-all duration-300 cursor-pointer select-none group"
-              title={gameState.phase === 'play' && !logoExpanded ? 'Savage Gods — Clic para ver logo completo' : 'Savage Gods'}
+              title={showCollapsedLogo ? 'Savage Gods — Clic para ver logo completo' : 'Savage Gods'}
             >
-              {gameState.phase === 'play' && !logoExpanded ? (
+              {showCollapsedLogo ? (
                 <img
                   src="/assets/savage_gods_v_flame.png"
                   alt="Savage Gods"
