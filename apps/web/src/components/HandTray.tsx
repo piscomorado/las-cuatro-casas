@@ -88,7 +88,11 @@ export const HandTray: React.FC<HandTrayProps> = ({
         </div>
         <div className="flex items-center gap-2 sm:gap-3">
           <span className="text-xs text-slate-300 font-medium">
-            {isSetup ? `Apertura (${setupCount + 1}/3)` : `${handPieces.length} en reserva`}
+            {isSetup
+              ? setupCount >= 3
+                ? 'Apertura (3/3)'
+                : `Apertura (${setupCount + 1}/3)`
+              : `${handPieces.length} en reserva`}
           </span>
           {onUndo && (
             <div className="flex items-center gap-1.5">
@@ -130,6 +134,7 @@ export const HandTray: React.FC<HandTrayProps> = ({
             {setupCount === 1 && 'Coloca tu 2.ª ficha contigua a tus fichas.'}
             {setupCount === 2 && !hasSovereignOnBoard && '¡Última ficha de apertura! Es obligatorio colocar al Soberano 👑'}
             {setupCount === 2 && hasSovereignOnBoard && 'Coloca tu 3.ª y última ficha inicial.'}
+            {setupCount >= 3 && 'Apertura completada. Pasando al siguiente jugador...'}
           </span>
         </div>
       )}
