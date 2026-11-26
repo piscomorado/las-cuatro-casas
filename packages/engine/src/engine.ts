@@ -458,7 +458,7 @@ export function applyAction(state: GameState, action: Action): ActionResult {
       } else {
         // Find next house in circle that still needs to place its setup pieces
         let nextIdx = (state.currentHouseIndex + 1) % nextAliveHouses.length;
-        while ((nextSetupCount[nextAliveHouses[nextIdx]] ?? 0) >= state.config.initialSetupPiecesCount) {
+        while (nextAliveHouses[nextIdx] && (nextSetupCount[nextAliveHouses[nextIdx]!] ?? 0) >= state.config.initialSetupPiecesCount) {
           nextIdx = (nextIdx + 1) % nextAliveHouses.length;
         }
         nextHouseIndex = nextIdx;
