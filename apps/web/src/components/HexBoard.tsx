@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { GameState, Action, CellKey, Piece, getNeighbors, coordToKey, keyToCoord } from '@lcch/engine';
 import { BoardHex } from './BoardHex';
 import { hexToPixel, HEX_SIZE } from '../utils/hexMath';
+import { ComicClashOverlay, ComicClashEvent } from './ComicClashOverlay';
 
 export interface LastMoveInfo {
   action: Action;
@@ -15,6 +16,8 @@ export interface HexBoardProps {
   legalActions: Action[];
   selectedPiece: Piece | null;
   lastMove?: LastMoveInfo | null;
+  clashEvent?: ComicClashEvent | null;
+  comicAnimationsEnabled?: boolean;
   onSelectPiece: (piece: Piece | null) => void;
   onExecuteAction: (action: Action) => void;
 }
@@ -24,10 +27,22 @@ export const HexBoard: React.FC<HexBoardProps> = ({
   legalActions,
   selectedPiece,
   lastMove,
+  clashEvent,
+  comicAnimationsEnabled = true,
   onSelectPiece,
   onExecuteAction,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [isShaking, setIsShaking] = useState(false);
+
+  // Screen shake on critical siege
+  useEffect(() => {
+    if (clashEvent && comicAnimationsEnabled && clashEvent.siegeCount >= 5) {
+      setIsShaking(true);
+      const timer = setTimeout(() => setIsShaking(false), 350);
+      return () => clearTimeout(timer);
+    }
+  }, [clashEvent?.id]);
 
   // Pan & Zoom state
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -185,7 +200,7 @@ export const HexBoard: React.FC<HexBoardProps> = ({
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-full overflow-hidden select-none bg-slate-950"
+      className={`relative w-full h-full overflow-hidden select-none bg-slate-950 ${isShaking ? 'animate-comic-shake' : ''}`}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
@@ -280,8 +295,16 @@ export const HexBoard: React.FC<HexBoardProps> = ({
               </g>
             );
           })()}
+
+          {/* Comic Action Clash Overlay */}
+          <ComicClashOverlay clash={comicAnimationsEnabled ? (clashEvent ?? null) : null} />
         </g>
       </svg>
+
+      {/* Screen Danger Vignette Flash on 5/6 Sovereign Critical Siege */}
+      {isShaking && clashEvent?.siegeCount === 5 && (
+        <div className="pointer-events-none fixed inset-0 comic-danger-vignette z-40" />
+      )}
 
       {/* Floating Controls */}
       <div className="absolute bottom-6 right-6 flex flex-col gap-2 z-10 pointer-events-auto">

@@ -10,12 +10,19 @@ import {
   HOUSES,
   getBotAction,
   BotDifficulty,
+  getNeighbors,
+  coordToKey,
+  keyToCoord,
+  CellKey,
+  PieceType,
 } from '@lcch/engine';
 import { HexBoard, LastMoveInfo } from './components/HexBoard';
 import { HandTray } from './components/HandTray';
 import { ManualModal } from './components/ManualModal';
 import { OnlineLobbyModal } from './components/OnlineLobbyModal';
 import { SavageGodsIcon } from './components/SavageGodsIcon';
+import { ComicClashEvent } from './components/ComicClashOverlay';
+import { hexToPixel, HEX_SIZE } from './utils/hexMath';
 import { sounds } from './utils/soundEffects';
 import { OnlineMultiplayerManager, OnlineRole, PlayerInfo } from './utils/onlineMultiplayer';
 
@@ -41,6 +48,70 @@ export const App: React.FC = () => {
   const [connectedPlayers, setConnectedPlayers] = useState<PlayerInfo[]>([]);
   const [onlineErrorMessage, setOnlineErrorMessage] = useState<string | null>(null);
   const multiplayerManagerRef = useRef<OnlineMultiplayerManager | null>(null);
+
+  // Comic Clash Animation State
+  const [clashEvent, setClashEvent] = useState<ComicClashEvent | null>(null);
+  const [comicAnimationsEnabled, setComicAnimationsEnabled] = useState(true);
+
+  const checkSovereignClash = (action: Action, prevState: GameState, nextState: GameState): ComicClashEvent | null => {
+    if (!('to' in action) || !action.to) return null;
+    const destCoord = action.to;
+    const destPixel = hexToPixel(destCoord, HEX_SIZE);
+
+    let actingPieceType: PieceType = 'SO';
+    if ('pieceId' in action && prevState.pieces[action.pieceId]) {
+      actingPieceType = prevState.pieces[action.pieceId]!.type;
+    }
+
+    for (const p of Object.values(nextState.pieces)) {
+      if (
+        p.type === 'SO' &&
+        p.location === 'board' &&
+        p.cellKey &&
+        nextState.aliveHouses.includes(p.house) &&
+        p.house !== action.house
+      ) {
+        const soCoord = keyToCoord(p.cellKey);
+        const isAdj = getNeighbors(soCoord).some((nb) => nb.q === destCoord.q && nb.r === destCoord.r);
+        if (isAdj) {
+          const occupied = new Set(
+            (Object.keys(nextState.board) as CellKey[]).filter((k) => (nextState.board[k]?.length ?? 0) > 0)
+          );
+          let count = 0;
+          for (const nb of getNeighbors(soCoord)) {
+            if (occupied.has(coordToKey(nb))) count++;
+          }
+
+          const clash: ComicClashEvent = {
+            id: `${Date.now()}-${p.cellKey}`,
+            attackerType: actingPieceType,
+            attackerHouse: action.house,
+            targetHouse: p.house,
+            fromPixel: 'from' in action && action.from ? hexToPixel(action.from, HEX_SIZE) : undefined,
+            toPixel: destPixel,
+            sovereignPixel: hexToPixel(soCoord, HEX_SIZE),
+            siegeCount: count,
+          };
+
+          // Sound triggers based on comic action type
+          if (actingPieceType === 'CZ') {
+            sounds.playSwordSlash();
+          } else if (actingPieceType === 'BS') {
+            sounds.playBeastClaw();
+          } else if (actingPieceType === 'GI') {
+            sounds.playGiantStomp();
+          }
+
+          if (count === 5) {
+            sounds.playCriticalAlert();
+          }
+
+          return clash;
+        }
+      }
+    }
+    return null;
+  };
 
   const isOnlineSession = onlineStatus === 'hosting' || onlineStatus === 'connected';
 
@@ -80,6 +151,10 @@ export const App: React.FC = () => {
         setSelectedPiece(null);
         if (remoteLastMove) {
           setLastMove(remoteLastMove);
+        }
+        if (comicAnimationsEnabled) {
+          const clash = checkSovereignClash(action, gameState, nextState);
+          setClashEvent(clash);
         }
       },
       onPlayerConnected: (player) => {
@@ -261,6 +336,12 @@ export const App: React.FC = () => {
 
       setGameState(res.state);
       setSelectedPiece(null);
+
+      // Check for Comic Clash Animation against enemy Sovereigns
+      if (comicAnimationsEnabled) {
+        const clash = checkSovereignClash(action, gameState, res.state);
+        setClashEvent(clash);
+      }
 
       // Broadcast action to online peers
       if (isOnlineSession) {
@@ -445,6 +526,25 @@ export const App: React.FC = () => {
                   </span>
                 </button>
 
+                {/* Comic Clash Animations Toggle */}
+                <button
+                  onClick={() => setComicAnimationsEnabled((prev) => !prev)}
+                  className="w-full px-3 py-2 rounded-xl hover:bg-slate-800/80 text-left text-xs font-semibold text-slate-200 flex items-center justify-between transition-colors"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-base">{comicAnimationsEnabled ? '💥' : '⚪'}</span>
+                    <div className="flex flex-col">
+                      <span>Animaciones Cómic</span>
+                      <span className="text-[10px] text-slate-400 font-normal">
+                        {comicAnimationsEnabled ? 'Garras, tajos y pisotón activos' : 'Modo minimalista'}
+                      </span>
+                    </div>
+                  </div>
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${comicAnimationsEnabled ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-slate-800 text-slate-400'}`}>
+                    {comicAnimationsEnabled ? 'ON' : 'OFF'}
+                  </span>
+                </button>
+
                 <div className="my-1 border-t border-slate-800/80" />
 
                 <button
@@ -471,6 +571,8 @@ export const App: React.FC = () => {
           legalActions={legalMoveResult.actions}
           selectedPiece={selectedPiece}
           lastMove={lastMove}
+          clashEvent={clashEvent}
+          comicAnimationsEnabled={comicAnimationsEnabled}
           onSelectPiece={handleSelectPiece}
           onExecuteAction={handleExecuteAction}
         />

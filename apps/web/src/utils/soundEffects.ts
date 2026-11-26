@@ -186,6 +186,114 @@ class SoundManager {
     osc.start(t);
     osc.stop(t + 0.25);
   }
+
+  /**
+   * Sharp metallic X-slash sword impact for Cazador.
+   */
+  public playSwordSlash() {
+    if (this.isMuted) return;
+    this.initContext();
+    if (!this.ctx) return;
+
+    const t = this.ctx.currentTime;
+    // Whoosh
+    const osc1 = this.ctx.createOscillator();
+    const gain1 = this.ctx.createGain();
+    osc1.type = 'sawtooth';
+    osc1.frequency.setValueAtTime(800, t);
+    osc1.frequency.exponentialRampToValueAtTime(150, t + 0.12);
+    gain1.gain.setValueAtTime(0.25, t);
+    gain1.gain.exponentialRampToValueAtTime(0.001, t + 0.13);
+    osc1.connect(gain1);
+    gain1.connect(this.ctx.destination);
+    osc1.start(t);
+    osc1.stop(t + 0.13);
+
+    // High metallic ping / ring
+    const osc2 = this.ctx.createOscillator();
+    const gain2 = this.ctx.createGain();
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(1800, t + 0.04);
+    osc2.frequency.exponentialRampToValueAtTime(1200, t + 0.28);
+    gain2.gain.setValueAtTime(0.2, t + 0.04);
+    gain2.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+    osc2.connect(gain2);
+    gain2.connect(this.ctx.destination);
+    osc2.start(t + 0.04);
+    osc2.stop(t + 0.3);
+  }
+
+  /**
+   * Fierce ripping claw tear for Bestia Saltadora.
+   */
+  public playBeastClaw() {
+    if (this.isMuted) return;
+    this.initContext();
+    if (!this.ctx) return;
+
+    const t = this.ctx.currentTime;
+    // Fast claw scrape sweeps
+    [0, 0.03, 0.06].forEach((delay, idx) => {
+      const osc = this.ctx!.createOscillator();
+      const gain = this.ctx!.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(500 - idx * 60, t + delay);
+      osc.frequency.exponentialRampToValueAtTime(90, t + delay + 0.1);
+      gain.gain.setValueAtTime(0.18, t + delay);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + delay + 0.1);
+      osc.connect(gain);
+      gain.connect(this.ctx!.destination);
+      osc.start(t + delay);
+      osc.stop(t + delay + 0.1);
+    });
+  }
+
+  /**
+   * Deep sub-bass ground stomp with rumble for Gigante.
+   */
+  public playGiantStomp() {
+    if (this.isMuted) return;
+    this.initContext();
+    if (!this.ctx) return;
+
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(110, t);
+    osc.frequency.exponentialRampToValueAtTime(25, t + 0.28);
+    gain.gain.setValueAtTime(0.5, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(t);
+    osc.stop(t + 0.3);
+  }
+
+  /**
+   * High-tension heartbeat / alert for Sovereign 5/6 critical siege.
+   */
+  public playCriticalAlert() {
+    if (this.isMuted) return;
+    this.initContext();
+    if (!this.ctx) return;
+
+    const t = this.ctx.currentTime;
+    // Dramatic double pulse
+    [0, 0.14].forEach((delay) => {
+      const osc = this.ctx!.createOscillator();
+      const gain = this.ctx!.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(280, t + delay);
+      osc.frequency.exponentialRampToValueAtTime(70, t + delay + 0.12);
+      gain.gain.setValueAtTime(0.35, t + delay);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + delay + 0.12);
+      osc.connect(gain);
+      gain.connect(this.ctx!.destination);
+      osc.start(t + delay);
+      osc.stop(t + delay + 0.12);
+    });
+  }
 }
 
 export const sounds = new SoundManager();
