@@ -417,26 +417,21 @@ export const App: React.FC = () => {
           <div className="flex items-center gap-3">
             <div
               onClick={() => setLogoExpanded(!logoExpanded)}
-              className="pointer-events-auto flex items-center bg-slate-900/90 backdrop-blur-md border border-slate-800/80 rounded-2xl p-2.5 shadow-2xl transition-all duration-300 cursor-pointer hover:border-amber-500/50"
-              title={gameState.phase === 'play' && !logoExpanded ? 'Savage Gods — Clic para expandir logo' : 'Savage Gods'}
+              className="pointer-events-auto flex items-center transition-all duration-300 cursor-pointer select-none group"
+              title={gameState.phase === 'play' && !logoExpanded ? 'Savage Gods — Clic para ver logo completo' : 'Savage Gods'}
             >
               {gameState.phase === 'play' && !logoExpanded ? (
                 <img
                   src="/assets/savage_gods_v_flame.png"
                   alt="Savage Gods"
-                  className="h-11 w-auto object-contain drop-shadow-[0_2px_14px_rgba(245,158,11,0.5)] transition-transform duration-300 hover:scale-110"
+                  className="h-16 sm:h-20 w-auto object-contain filter drop-shadow-[0_4px_16px_rgba(0,0,0,0.85)] drop-shadow-[0_2px_18px_rgba(245,158,11,0.45)] transition-transform duration-300 group-hover:scale-105 active:scale-95"
                 />
               ) : (
-                <div className="flex items-center gap-3.5 px-3 py-1">
-                  <img
-                    src="/assets/savage_gods_v_flame.png"
-                    alt="Savage Gods Crest"
-                    className="h-12 w-auto object-contain drop-shadow-[0_2px_14px_rgba(245,158,11,0.5)]"
-                  />
-                  <h1 className="font-title font-black text-2xl md:text-3xl tracking-widest uppercase text-white drop-shadow-[0_2px_12px_rgba(255,255,255,0.35)] select-none">
-                    SAVAGE GODS
-                  </h1>
-                </div>
+                <img
+                  src="/assets/savage_gods_logo.png"
+                  alt="Savage Gods"
+                  className="h-24 sm:h-28 md:h-32 w-auto object-contain filter drop-shadow-[0_6px_20px_rgba(0,0,0,0.9)] drop-shadow-[0_2px_22px_rgba(245,158,11,0.35)] transition-transform duration-300 group-hover:scale-105 active:scale-95"
+                />
               )}
             </div>
 
