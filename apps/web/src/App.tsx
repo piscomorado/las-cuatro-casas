@@ -14,7 +14,9 @@ import {
 import { HexBoard, LastMoveInfo } from './components/HexBoard';
 import { HandTray } from './components/HandTray';
 import { ManualModal } from './components/ManualModal';
+import { OnlineLobbyModal } from './components/OnlineLobbyModal';
 import { sounds } from './utils/soundEffects';
+import { OnlineMultiplayerManager, OnlineRole, PlayerInfo } from './utils/onlineMultiplayer';
 
 export const App: React.FC = () => {
   // Game setup configuration
@@ -28,6 +30,144 @@ export const App: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [lastMove, setLastMove] = useState<LastMoveInfo | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // Online Multiplayer State
+  const [isOnlineModalOpen, setIsOnlineModalOpen] = useState(false);
+  const [onlineStatus, setOnlineStatus] = useState<'disconnected' | 'connecting' | 'connected' | 'hosting'>('disconnected');
+  const [onlineRole, setOnlineRole] = useState<OnlineRole>('host');
+  const [onlineMyHouse, setOnlineMyHouse] = useState<House>('red');
+  const [onlineRoomId, setOnlineRoomId] = useState<string>('');
+  const [connectedPlayers, setConnectedPlayers] = useState<PlayerInfo[]>([]);
+  const [onlineErrorMessage, setOnlineErrorMessage] = useState<string | null>(null);
+  const multiplayerManagerRef = useRef<OnlineMultiplayerManager | null>(null);
+
+  const isOnlineSession = onlineStatus === 'hosting' || onlineStatus === 'connected';
+
+  // Initialize Multiplayer Manager
+  useEffect(() => {
+    const manager = new OnlineMultiplayerManager({
+      onStateSync: (syncedState, assignedHouse, roomHouses) => {
+        setGameState(syncedState);
+        setSelectedPiece(null);
+        if (assignedHouse) {
+          setOnlineMyHouse(assignedHouse);
+          setHumanHouse(assignedHouse);
+        }
+        if (roomHouses) {
+          setNumHouses(roomHouses);
+        }
+        sounds.playTurnChime();
+      },
+      onRemoteAction: (action, nextState, remoteLastMove) => {
+        // Sound feedback
+        if (action.type === 'PlacePiece') {
+          sounds.playPlaceTile();
+        } else if (action.type === 'MovePiece') {
+          if (action.moveKind === 'cz' || action.moveKind === 'bs') {
+            sounds.playJump();
+          } else {
+            sounds.playSlide();
+          }
+        } else if (action.type === 'ClimbStack' || action.type === 'DescendStack') {
+          sounds.playSlide();
+        } else if (action.type === 'SwapPiece' || action.type === 'ExilePiece') {
+          sounds.playMystic();
+        } else if (action.type === 'Pass') {
+          sounds.playTurnChime();
+        }
+        setGameState(nextState);
+        setSelectedPiece(null);
+        if (remoteLastMove) {
+          setLastMove(remoteLastMove);
+        }
+      },
+      onPlayerConnected: (player) => {
+        setConnectedPlayers((prev) => {
+          if (prev.some((p) => p.peerId === player.peerId)) return prev;
+          return [...prev, player];
+        });
+        sounds.playTurnChime();
+      },
+      onPlayerDisconnected: (house) => {
+        setConnectedPlayers((prev) => prev.filter((p) => p.house !== house));
+      },
+      onError: (err) => {
+        setOnlineErrorMessage(err);
+      },
+      onStatusChange: (status) => {
+        setOnlineStatus(status);
+        if (status === 'hosting' || status === 'connected') {
+          setOnlineErrorMessage(null);
+        }
+      },
+    });
+
+    multiplayerManagerRef.current = manager;
+
+    // Check URL parameters for ?room=...
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomParam = urlParams.get('room');
+    if (roomParam) {
+      setIsOnlineModalOpen(true);
+      setOnlineRole('guest');
+      manager
+        .joinRoom(roomParam)
+        .then(() => {
+          setOnlineRoomId(roomParam);
+        })
+        .catch((e) => {
+          setOnlineErrorMessage(`No se pudo conectar a la sala ${roomParam}: ${e.message || e}`);
+        });
+    }
+
+    return () => {
+      manager.disconnect();
+    };
+  }, []);
+
+  const handleHostOnlineRoom = async (hostHouse: House, housesCount: 2 | 3 | 4) => {
+    if (!multiplayerManagerRef.current) return;
+    setOnlineErrorMessage(null);
+    setOnlineRole('host');
+    setOnlineMyHouse(hostHouse);
+    setHumanHouse(hostHouse);
+    setNumHouses(housesCount);
+
+    const freshState = initGame({ seed: Date.now(), houses: HOUSES.slice(0, housesCount), randomStart: true });
+    setGameState(freshState);
+    setSelectedPiece(null);
+    setLastMove(null);
+
+    try {
+      const id = await multiplayerManagerRef.current.hostRoom(hostHouse, housesCount, freshState);
+      setOnlineRoomId(id);
+    } catch (err: any) {
+      setOnlineErrorMessage(`Error al crear sala: ${err.message || err}`);
+    }
+  };
+
+  const handleJoinOnlineRoom = async (targetRoomId: string) => {
+    if (!multiplayerManagerRef.current) return;
+    setOnlineErrorMessage(null);
+    setOnlineRole('guest');
+    try {
+      await multiplayerManagerRef.current.joinRoom(targetRoomId);
+      setOnlineRoomId(targetRoomId);
+    } catch (err: any) {
+      setOnlineErrorMessage(`Error al unirse a la sala: ${err.message || err}`);
+    }
+  };
+
+  const handleDisconnectOnline = () => {
+    multiplayerManagerRef.current?.disconnect();
+    setOnlineRoomId('');
+    setConnectedPlayers([]);
+    setOnlineStatus('disconnected');
+    setOnlineErrorMessage(null);
+    if (window.history.replaceState) {
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  };
 
   // Close dropdown menu when clicking outside
   useEffect(() => {
@@ -66,10 +206,13 @@ export const App: React.FC = () => {
 
   const handleSelectPiece = (piece: Piece | null) => {
     if (isCurrentPlayerBot) return; // Prevent human selection during bot turn
+    if (isOnlineSession && currentHouse !== onlineMyHouse) return; // In online mode, only select on your turn
     setSelectedPiece(piece);
   };
 
   const handleExecuteAction = (action: Action) => {
+    if (isOnlineSession && currentHouse !== onlineMyHouse) return; // In online mode, only act on your turn
+
     const res = applyAction(gameState, action);
     if (res.success) {
       // Sound feedback based on action type
@@ -102,19 +245,26 @@ export const App: React.FC = () => {
       }
 
       // Track last move for trajectory visualization
+      let newLastMove: LastMoveInfo | null = null;
       if ('to' in action) {
-        setLastMove({
+        newLastMove = {
           action,
           from: 'from' in action ? action.from : null,
           to: action.to,
           house: action.house,
-        });
+        };
+        setLastMove(newLastMove);
       } else {
         setLastMove(null);
       }
 
       setGameState(res.state);
       setSelectedPiece(null);
+
+      // Broadcast action to online peers
+      if (isOnlineSession) {
+        multiplayerManagerRef.current?.sendAction(action, res.state, newLastMove);
+      }
     }
   };
 
@@ -125,10 +275,15 @@ export const App: React.FC = () => {
 
   const handleRestart = (housesCount: 2 | 3 | 4 = numHouses) => {
     const houses = HOUSES.slice(0, housesCount);
-    setGameState(initGame({ seed: Date.now(), houses, randomStart: true }));
+    const newState = initGame({ seed: Date.now(), houses, randomStart: true });
+    setGameState(newState);
     setSelectedPiece(null);
     setLastMove(null);
     isBotThinking.current = false;
+
+    if (isOnlineSession && onlineRole === 'host') {
+      multiplayerManagerRef.current?.sendRestart(newState);
+    }
   };
 
   // Bot Turn Automation with natural turn delay
@@ -160,21 +315,44 @@ export const App: React.FC = () => {
         {/* Top Floating Controls Bar */}
         <header className="absolute top-4 left-6 right-6 z-20 flex items-center justify-between pointer-events-none">
           {/* Top Left Title Header */}
-          <div className="pointer-events-auto flex items-center gap-3 bg-slate-900/80 backdrop-blur-md border border-slate-800/80 rounded-2xl px-5 py-2.5 shadow-2xl">
-            <span className="text-2xl filter drop-shadow">⚔️</span>
-            <div>
-              <h1 className="font-title font-black text-xl tracking-wider uppercase bg-gradient-to-r from-amber-300 via-rose-300 to-indigo-300 bg-clip-text text-transparent">
-                LAS CUATRO CASAS
-              </h1>
-              <p className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold">
-                Juego de Estrategia Abstracta
-              </p>
+          <div className="flex items-center gap-3">
+            <div className="pointer-events-auto flex items-center gap-3 bg-slate-900/80 backdrop-blur-md border border-slate-800/80 rounded-2xl px-5 py-2.5 shadow-2xl">
+              <span className="text-2xl filter drop-shadow">⚔️</span>
+              <div>
+                <h1 className="font-title font-black text-xl tracking-wider uppercase bg-gradient-to-r from-amber-300 via-rose-300 to-indigo-300 bg-clip-text text-transparent">
+                  LAS CUATRO CASAS
+                </h1>
+                <p className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold">
+                  Juego de Estrategia Abstracta
+                </p>
+              </div>
             </div>
+
+            {/* Online Status Pill */}
+            {isOnlineSession && (
+              <button
+                onClick={() => setIsOnlineModalOpen(true)}
+                className="pointer-events-auto flex items-center gap-2 px-3 py-2 rounded-2xl bg-slate-900/90 backdrop-blur border border-cyan-500/60 hover:border-cyan-400 text-xs font-bold shadow-2xl transition-all cursor-pointer"
+                title="Ver detalles de la sala online o copiar link de invitación"
+              >
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-cyan-300 font-mono text-[11px]">{onlineRoomId}</span>
+                <span className="text-slate-500">•</span>
+                <span className="text-slate-200">
+                  Tu Casa: <span className="uppercase text-amber-300 font-bold">{onlineMyHouse}</span>
+                </span>
+                <span className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase ${
+                  currentHouse === onlineMyHouse ? 'bg-emerald-950 text-emerald-300 border border-emerald-600' : 'bg-slate-800 text-slate-400'
+                }`}>
+                  {currentHouse === onlineMyHouse ? '¡Tu Turno!' : `Turno ${currentHouse}`}
+                </span>
+              </button>
+            )}
           </div>
 
           {/* Top Right Quick Menu Trigger */}
           <div className="pointer-events-auto relative flex items-center gap-2" ref={menuRef}>
-            {legalMoveResult.canPass && gameState.status === 'playing' && !isCurrentPlayerBot && (
+            {legalMoveResult.canPass && gameState.status === 'playing' && !isCurrentPlayerBot && (!isOnlineSession || currentHouse === onlineMyHouse) && (
               <button
                 onClick={handlePass}
                 className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs uppercase tracking-wider shadow-lg transition-transform active:scale-95 animate-pulse"
@@ -199,7 +377,31 @@ export const App: React.FC = () => {
 
             {/* Dropdown Panel */}
             {isMenuOpen && (
-              <div className="absolute right-0 top-full mt-2 w-56 bg-slate-900/95 backdrop-blur-2xl border border-slate-700/80 rounded-2xl p-2 shadow-2xl z-50 flex flex-col gap-1 animate-fade-in">
+              <div className="absolute right-0 top-full mt-2 w-60 bg-slate-900/95 backdrop-blur-2xl border border-slate-700/80 rounded-2xl p-2 shadow-2xl z-50 flex flex-col gap-1 animate-fade-in">
+                {/* Online Multiplayer Lobby Button */}
+                <button
+                  onClick={() => {
+                    setIsOnlineModalOpen(true);
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-full px-3 py-2.5 rounded-xl hover:bg-indigo-950/50 text-left text-xs font-bold text-cyan-300 flex items-center justify-between transition-colors border border-cyan-500/20"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-base">🌐</span>
+                    <div className="flex flex-col">
+                      <span>Partida Online</span>
+                      <span className="text-[10px] text-slate-400 font-normal">
+                        {isOnlineSession ? 'Sala activa (ver enlace)' : 'Invitar a jugar con link'}
+                      </span>
+                    </div>
+                  </div>
+                  {isOnlineSession && (
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                  )}
+                </button>
+
+                <div className="my-0.5 border-t border-slate-800/80" />
+
                 <button
                   onClick={() => {
                     setIsManualOpen(true);
@@ -223,7 +425,7 @@ export const App: React.FC = () => {
                 >
                   <span className="text-base">⚙️</span>
                   <div className="flex flex-col">
-                    <span>Configuración</span>
+                    <span>Configuración Local</span>
                     <span className="text-[10px] text-slate-400 font-normal">Casas, modo y dificultad</span>
                   </div>
                 </button>
@@ -287,6 +489,16 @@ export const App: React.FC = () => {
           </div>
         )}
 
+        {/* Online Waiting for Rival Turn Indicator */}
+        {isOnlineSession && currentHouse !== onlineMyHouse && gameState.status === 'playing' && (
+          <div className="absolute bottom-6 left-6 z-20 flex items-center gap-2.5 bg-slate-900/95 border border-cyan-500/50 rounded-xl px-4 py-2.5 shadow-2xl animate-pulse">
+            <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping" />
+            <span className="text-xs font-bold text-slate-200">
+              ⏳ Esperando la jugada de tu rival (<span className="uppercase text-cyan-400">Casa {currentHouse}</span>)...
+            </span>
+          </div>
+        )}
+
         {/* Game Finished Overlay Modal */}
         {gameState.status === 'finished' && (
           <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fade-in">
@@ -334,7 +546,7 @@ export const App: React.FC = () => {
         <HandTray
           house={currentHouse}
           pieces={Object.values(gameState.pieces)}
-          isActive={gameState.status === 'playing'}
+          isActive={gameState.status === 'playing' && (!isOnlineSession || onlineMyHouse === currentHouse)}
           selectedPiece={selectedPiece}
           onSelectPiece={handleSelectPiece}
           ownTurn={gameState.ownTurns[currentHouse] ?? 0}
@@ -485,6 +697,22 @@ export const App: React.FC = () => {
 
       {/* Manual Modal */}
       <ManualModal isOpen={isManualOpen} onClose={() => setIsManualOpen(false)} />
+
+      {/* Online Multiplayer Lobby Modal */}
+      <OnlineLobbyModal
+        isOpen={isOnlineModalOpen}
+        onClose={() => setIsOnlineModalOpen(false)}
+        status={onlineStatus}
+        role={onlineRole}
+        myHouse={onlineMyHouse}
+        roomId={onlineRoomId}
+        numHouses={numHouses}
+        connectedPlayers={connectedPlayers}
+        errorMessage={onlineErrorMessage}
+        onHostRoom={handleHostOnlineRoom}
+        onJoinRoom={handleJoinOnlineRoom}
+        onDisconnect={handleDisconnectOnline}
+      />
     </div>
   );
 };

@@ -14,6 +14,7 @@
     "@lcch/shared": "workspace:*",
     "clsx": "^2.1.1",
     "lucide-react": "^0.395.0",
+    "peerjs": "^1.5.5",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "tailwind-merge": "^2.3.0"
