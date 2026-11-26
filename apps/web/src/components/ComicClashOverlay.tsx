@@ -23,6 +23,8 @@ export interface ComicClashOverlayProps {
 const TOTAL_FRAMES = 12;
 const FRAME_RENDER_SIZE = 195; // Calibrated to reach halfway into surrounding adjacent hexes
 const HALF_SIZE = FRAME_RENDER_SIZE / 2;
+const BESTIA_RENDER_SIZE = 250; // Amplified vertical presence for Bestia claw tear
+const BESTIA_HALF_SIZE = BESTIA_RENDER_SIZE / 2;
 
 /**
  * 100% Reliable Embedded Spritesheet VFX Overlay.
@@ -42,14 +44,11 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
     setVisible(true);
     setFrameIndex(0);
 
-    // Natural 12-Frame Rhythm:
-    // Frames 0-5 (Windup & Crossing): 40ms, 45ms, 50ms, 50ms, 55ms, 60ms
-    // Frames 6-8 (Climax Impact Slow-Motion):
-    //   - Frame 6 (Star Ignition): 180ms
-    //   - Frame 7 (Peak Obsidian Starburst): 260ms
-    //   - Frame 8 (Shattered Diamond Spread): 140ms
-    // Frames 9-11 (Dissipation): 65ms, 60ms, 55ms
-    const frameDurations = [40, 45, 50, 50, 55, 60, 180, 260, 140, 65, 60, 55];
+    // Natural 12-Frame Rhythm with dedicated slow-motion tear hold for Bestia (BS):
+    const isBestia = clash.attackerType === 'BS';
+    const frameDurations = isBestia
+      ? [35, 40, 45, 50, 65, 140, 240, 320, 180, 85, 75, 65]
+      : [40, 45, 50, 50, 55, 60, 180, 260, 140, 65, 60, 55];
     let cur = 0;
     let timerId: any;
 
@@ -104,10 +103,10 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
         </clipPath>
         <clipPath id="bestia-frame-clip">
           <rect
-            x={-HALF_SIZE}
-            y={-HALF_SIZE}
-            width={FRAME_RENDER_SIZE}
-            height={FRAME_RENDER_SIZE}
+            x={-BESTIA_HALF_SIZE}
+            y={-BESTIA_HALF_SIZE}
+            width={BESTIA_RENDER_SIZE}
+            height={BESTIA_RENDER_SIZE}
           />
         </clipPath>
       </defs>
@@ -212,18 +211,31 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
       {/* 5. Feral Beast Downward Spatial Claw Slash for Bestia Saltadora (BS) */}
       {attackerType === 'BS' && (
         <g transform={`translate(${midX}, ${midY})`}>
+          {/* Spatial Void Tear Backdrop during Peak Laceration (Frames 5 to 8) */}
+          {frameIndex >= 5 && frameIndex <= 8 && (
+            <ellipse
+              cx="0"
+              cy="0"
+              rx="55"
+              ry="115"
+              fill="#030712"
+              opacity={frameIndex === 6 || frameIndex === 7 ? 0.82 : 0.45}
+              filter="drop-shadow(0 0 25px rgba(234, 88, 12, 0.95)) drop-shadow(0 0 50px rgba(220, 38, 38, 0.7))"
+            />
+          )}
           <g clipPath="url(#bestia-frame-clip)">
             <image
               href={BESTIA_SPRITESHEET_B64}
               xlinkHref={BESTIA_SPRITESHEET_B64}
-              x={-HALF_SIZE - frameIndex * FRAME_RENDER_SIZE}
-              y={-HALF_SIZE}
-              width={FRAME_RENDER_SIZE * TOTAL_FRAMES}
-              height={FRAME_RENDER_SIZE}
+              x={-BESTIA_HALF_SIZE - frameIndex * BESTIA_RENDER_SIZE}
+              y={-BESTIA_HALF_SIZE}
+              width={BESTIA_RENDER_SIZE * TOTAL_FRAMES}
+              height={BESTIA_RENDER_SIZE}
               style={{
                 opacity: 1,
                 imageRendering: 'auto',
-                filter: 'drop-shadow(0 0 12px rgba(234, 88, 12, 0.45))',
+                filter:
+                  'drop-shadow(0 0 16px rgba(255, 110, 20, 0.95)) drop-shadow(0 0 38px rgba(220, 38, 38, 0.65)) contrast(1.2) brightness(1.15)',
               }}
             />
           </g>

@@ -35,9 +35,13 @@ export const HexBoard: React.FC<HexBoardProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const [isShaking, setIsShaking] = useState(false);
 
-  // Screen shake on critical siege
+  // Screen shake on critical siege or Bestia claw impact
   useEffect(() => {
-    if (clashEvent && comicAnimationsEnabled && (clashEvent.siegeCount ?? 0) >= 5) {
+    if (
+      clashEvent &&
+      comicAnimationsEnabled &&
+      ((clashEvent.siegeCount ?? 0) >= 5 || clashEvent.attackerType === 'BS')
+    ) {
       setIsShaking(true);
       const timer = setTimeout(() => setIsShaking(false), 500);
       return () => clearTimeout(timer);
