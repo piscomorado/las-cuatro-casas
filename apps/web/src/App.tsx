@@ -93,11 +93,13 @@ export const App: React.FC = () => {
           } else if (siegeCount === 5) {
             sounds.playCriticalAlert();
             if (actingPieceType === 'CZ') sounds.playSwordSlash();
+            else if (actingPieceType === 'EX') sounds.playWindCyclone();
             else if (actingPieceType === 'BS') sounds.playBeastClaw();
             else if (actingPieceType === 'GI') sounds.playGiantStomp();
             else sounds.playSlide();
           } else {
             if (actingPieceType === 'CZ') sounds.playSwordSlash();
+            else if (actingPieceType === 'EX') sounds.playWindCyclone();
             else if (actingPieceType === 'BS') sounds.playBeastClaw();
             else if (actingPieceType === 'GI') sounds.playGiantStomp();
             else sounds.playSlide();

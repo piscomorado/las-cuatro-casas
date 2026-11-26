@@ -81,6 +81,45 @@ class SoundManager {
   }
 
   /**
+   * Swift wind cyclone / zephyr blade whoosh for Explorador.
+   */
+  public playWindCyclone() {
+    if (this.isMuted) return;
+    this.initContext();
+    if (!this.ctx) return;
+
+    const t = this.ctx.currentTime;
+    // Fast rushing wind sweep
+    const osc1 = this.ctx.createOscillator();
+    const gain1 = this.ctx.createGain();
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(320, t);
+    osc1.frequency.exponentialRampToValueAtTime(740, t + 0.14);
+    osc1.frequency.exponentialRampToValueAtTime(160, t + 0.35);
+    gain1.gain.setValueAtTime(0.05, t);
+    gain1.gain.linearRampToValueAtTime(0.28, t + 0.12);
+    gain1.gain.exponentialRampToValueAtTime(0.001, t + 0.38);
+    osc1.connect(gain1);
+    gain1.connect(this.ctx.destination);
+    osc1.start(t);
+    osc1.stop(t + 0.38);
+
+    // Ethereal golden harmonic whistle
+    const osc2 = this.ctx.createOscillator();
+    const gain2 = this.ctx.createGain();
+    osc2.type = 'triangle';
+    osc2.frequency.setValueAtTime(880, t + 0.05);
+    osc2.frequency.exponentialRampToValueAtTime(1320, t + 0.18);
+    osc2.frequency.exponentialRampToValueAtTime(440, t + 0.32);
+    gain2.gain.setValueAtTime(0.12, t + 0.05);
+    gain2.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+    osc2.connect(gain2);
+    gain2.connect(this.ctx.destination);
+    osc2.start(t + 0.05);
+    osc2.stop(t + 0.35);
+  }
+
+  /**
    * Springy upward jump sound for Cazador or Bestia Saltadora.
    */
   public playJump() {

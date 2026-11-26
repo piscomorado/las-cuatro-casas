@@ -39,17 +39,15 @@ Cada ficha que ejecuta un asedio sobre un Soberano enemigo tiene un estilo visua
    - Escala: 195 px de diámetro (alcanza la mitad de los hexágonos adyacentes).
    - Audio: `playSwordSlash()` (whoosh cortante + tintineo metálico).
 
-2. **Bestia Saltadora (`BS`)** *(Próxima incorporación)*:
-   - Zarpazo salvaje de triple garra en bronce y carmesí.
-   - Audio: `playBeastClaw()` (rasgado fiero en 3 barridos rápidos).
+2. **Explorador (`EX`)** *(Integrado)*:
+   - Tira horizontal de 12 fotogramas embebida en Base64 (`explorador_b64.ts`).
+   - Ciclón de viento cortante y plumas doradas (*Zephyr Blade Vortex*): desde el aleteo inicial en 4 fases, pasando por el vórtice espiral acelerado, hasta el clímax de huracán con núcleo resplandeciente y espigas de diamante, culminando en un anillo abierto de plumas y chispas disipadas.
+   - Doble estela cinética de deslizamiento supersónico (filo dorado y cian).
+   - Anillo de choque geométrico eólico en el clímax.
+   - Escala: 195 px de diámetro.
+   - Audio: `playWindCyclone()` (barrido de viento supersónico aéreo y silbido armónico).
 
-3. **Gigante (`GI`)** *(Próxima incorporación)*:
-   - Pisotón sísmico con grietas geométricas en el suelo.
-   - Audio: `playGiantStomp()` (sub-bass retumbante a 25 Hz).
-
-4. **Explorador (`EX`)** *(Próxima incorporación)*:
-   - Torbellino y estela eólica veloz.
-   - Audio: `playSlide()` (deslizamiento silbante agudo).
+3. **Bestia Saltadora (`BS`)** *(Próxima incorporación)*:
 
 5. **Hechicero (`HE`) / Nigromante (`NI`)** *(Próxima incorporación)*:
    - Runa arcana o eclipse espectral.

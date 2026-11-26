@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { PieceType, House } from '@lcch/engine';
 import { CAZADOR_SPRITESHEET_B64 } from '../assets/vfx/cazador_b64';
+import { EXPLORADOR_SPRITESHEET_B64 } from '../assets/vfx/explorador_b64';
 
 export interface ComicClashEvent {
   id: string;
@@ -92,9 +93,17 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
             height={FRAME_RENDER_SIZE}
           />
         </clipPath>
+        <clipPath id="explorador-frame-clip">
+          <rect
+            x={-HALF_SIZE}
+            y={-HALF_SIZE}
+            width={FRAME_RENDER_SIZE}
+            height={FRAME_RENDER_SIZE}
+          />
+        </clipPath>
       </defs>
 
-      {/* 1. Kinetic Jump Streak between Origin and Destination (Frames 0-3) */}
+      {/* 1. Kinetic Streaks between Origin and Destination (Frames 0-3) */}
       {attackerType === 'CZ' && fromPixel && frameIndex < 4 && (
         <line
           x1={fromPixel.x}
@@ -108,18 +117,44 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
           opacity={frameIndex === 0 ? 0.85 : 0.45}
         />
       )}
+      {attackerType === 'EX' && fromPixel && frameIndex < 4 && (
+        <g>
+          <line
+            x1={fromPixel.x}
+            y1={fromPixel.y}
+            x2={midX}
+            y2={midY}
+            stroke="#fbbf24"
+            strokeWidth="3.5"
+            strokeDasharray="12 6"
+            strokeLinecap="round"
+            opacity={frameIndex === 0 ? 0.9 : 0.5}
+          />
+          <line
+            x1={fromPixel.x}
+            y1={fromPixel.y}
+            x2={midX}
+            y2={midY}
+            stroke="#38bdf8"
+            strokeWidth="1.5"
+            strokeDasharray="6 6"
+            strokeLinecap="round"
+            opacity={0.65}
+          />
+        </g>
+      )}
 
       {/* 2. Expanding Geometric Impact Ring during Climax (Frames 6-7) */}
-      {attackerType === 'CZ' && (frameIndex === 6 || frameIndex === 7) && (
+      {(attackerType === 'CZ' || attackerType === 'EX') && (frameIndex === 6 || frameIndex === 7) && (
         <g transform={`translate(${midX}, ${midY})`}>
           <circle
             cx="0"
             cy="0"
             r={frameIndex === 6 ? 72 : 96}
             fill="none"
-            stroke="#fbbf24"
+            stroke={attackerType === 'EX' ? '#fde047' : '#fbbf24'}
             strokeWidth="2.5"
-            opacity={frameIndex === 6 ? 0.65 : 0.35}
+            opacity={frameIndex === 6 ? 0.75 : 0.35}
           />
         </g>
       )}
@@ -144,8 +179,28 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
         </g>
       )}
 
-      {/* 4. Kinetic Shockwave for other piece types awaiting their custom 12-frame strips */}
-      {attackerType !== 'CZ' && (
+      {/* 4. Harmonized Gold & Feather 12-Frame Zephyr Cyclone for Explorador */}
+      {attackerType === 'EX' && (
+        <g transform={`translate(${midX}, ${midY})`}>
+          <g clipPath="url(#explorador-frame-clip)">
+            <image
+              href={EXPLORADOR_SPRITESHEET_B64}
+              xlinkHref={EXPLORADOR_SPRITESHEET_B64}
+              x={-HALF_SIZE - frameIndex * FRAME_RENDER_SIZE}
+              y={-HALF_SIZE}
+              width={FRAME_RENDER_SIZE * TOTAL_FRAMES}
+              height={FRAME_RENDER_SIZE}
+              preserveAspectRatio="none"
+              style={{
+                opacity: 1,
+              }}
+            />
+          </g>
+        </g>
+      )}
+
+      {/* 5. Kinetic Shockwave for other piece types awaiting their custom 12-frame strips */}
+      {attackerType !== 'CZ' && attackerType !== 'EX' && (
         <g transform={`translate(${midX}, ${midY})`}>
           <circle cx="0" cy="0" r="48" fill="#020617" opacity="0.65" />
           <circle
