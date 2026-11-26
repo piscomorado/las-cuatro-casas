@@ -26,7 +26,7 @@ export interface ComicClashOverlayProps {
 const TOTAL_FRAMES = 12;
 const FRAME_RENDER_SIZE = 195; // Calibrated to reach halfway into surrounding adjacent hexes
 const HALF_SIZE = FRAME_RENDER_SIZE / 2;
-const CAZADOR_RENDER_SIZE = 275; // Titan-Hunter Runic Sapphire Javelin presence
+const CAZADOR_RENDER_SIZE = 285; // Titan-Hunter Runic Sapphire Javelin presence
 const CAZADOR_HALF_SIZE = CAZADOR_RENDER_SIZE / 2;
 const BESTIA_RENDER_SIZE = 250; // Amplified vertical presence for Bestia claw tear
 const BESTIA_HALF_SIZE = BESTIA_RENDER_SIZE / 2;
@@ -62,7 +62,7 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
     const isHechicero = clash.attackerType === 'HE';
     const isNigromante = clash.attackerType === 'NI';
     const frameDurations = isCazador
-      ? [50, 55, 60, 75, 90, 420, 240, 140, 110, 80, 70, 60] // Frame 6 (idx 5) peak star shockwave & planted javelin hold
+      ? [60, 65, 75, 85, 95, 450, 260, 140, 110, 80, 70, 60] // Frame 6 (idx 5) peak star shockwave & planted javelin hold
       : isBestia
       ? [35, 40, 45, 50, 65, 140, 240, 320, 180, 85, 75, 65]
       : isGigante
@@ -217,14 +217,14 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
       {/* 3. Titan-Hunter Runic Sapphire Javelin Slam for Cazador (CZ) */}
       {attackerType === 'CZ' && (
         <g transform={`translate(${midX}, ${midY})`}>
-          {/* Luminous Sapphire & Gold Ground Impact Ring during Climax (Frames 5-6) */}
+          {/* Luminous Sapphire & Gold Ground Impact Ring during Climax (Frames 5-6) - Centered at exact javelin ground tip */}
           {(frameIndex === 5 || frameIndex === 6) && (
             <g>
               <ellipse
-                cx="15"
-                cy="70"
-                rx={frameIndex === 5 ? 78 : 105}
-                ry={frameIndex === 5 ? 32 : 44}
+                cx="16"
+                cy="108"
+                rx={frameIndex === 5 ? 85 : 115}
+                ry={frameIndex === 5 ? 34 : 46}
                 fill="none"
                 stroke="#38bdf8"
                 strokeWidth={frameIndex === 5 ? '3' : '2'}
@@ -232,9 +232,9 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
                 filter="drop-shadow(0 0 16px rgba(56, 189, 248, 0.95))"
               />
               <circle
-                cx="15"
-                cy="70"
-                r={frameIndex === 5 ? 46 : 70}
+                cx="16"
+                cy="108"
+                r={frameIndex === 5 ? 50 : 76}
                 fill="none"
                 stroke="#fbbf24"
                 strokeWidth="1.8"
