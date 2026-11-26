@@ -283,6 +283,7 @@ export const App: React.FC = () => {
     initGame({ seed: 1001, houses: activeHouses, randomStart: true })
   );
   const [selectedPiece, setSelectedPiece] = useState<Piece | null>(null);
+  const [history, setHistory] = useState<{ gameState: GameState; lastMove: LastMoveInfo | null }[]>([]);
   const isBotThinking = useRef(false);
 
   const currentHouse = gameState.aliveHouses[gameState.currentHouseIndex] as House;
@@ -305,6 +306,11 @@ export const App: React.FC = () => {
 
     const res = applyAction(gameState, action);
     if (res.success) {
+      // Save snapshot for undo BEFORE updating state (local/bot play only)
+      if (!isOnlineSession) {
+        setHistory((prev) => [...prev, { gameState, lastMove }]);
+      }
+
       // Sound feedback based on action type
       if (action.type === 'PlacePiece') {
         sounds.playPlaceTile();
@@ -380,12 +386,64 @@ export const App: React.FC = () => {
     setGameState(newState);
     setSelectedPiece(null);
     setLastMove(null);
+    setHistory([]);
+    setClashEvent(null);
     isBotThinking.current = false;
 
     if (isOnlineSession && onlineRole === 'host') {
       multiplayerManagerRef.current?.sendRestart(newState);
     }
   };
+
+  const handleUndo = () => {
+    if (history.length === 0 || isOnlineSession) return;
+
+    if (gameMode === 'bot') {
+      // In bot mode, rewind back to the player's prior turn
+      let targetIndex = -1;
+      for (let i = history.length - 1; i >= 0; i--) {
+        const snap = history[i]!;
+        const snapCurrentHouse = snap.gameState.aliveHouses[snap.gameState.currentHouseIndex];
+        if (snapCurrentHouse === humanHouse) {
+          targetIndex = i;
+          break;
+        }
+      }
+
+      if (targetIndex >= 0) {
+        const targetSnap = history[targetIndex]!;
+        setHistory((prev) => prev.slice(0, targetIndex));
+        setGameState(targetSnap.gameState);
+        setLastMove(targetSnap.lastMove);
+        setSelectedPiece(null);
+        setClashEvent(null);
+        isBotThinking.current = false;
+        sounds.playSlide();
+      }
+    } else {
+      // In local PvP mode, undo the last single move
+      const lastIndex = history.length - 1;
+      const targetSnap = history[lastIndex]!;
+      setHistory((prev) => prev.slice(0, lastIndex));
+      setGameState(targetSnap.gameState);
+      setLastMove(targetSnap.lastMove);
+      setSelectedPiece(null);
+      setClashEvent(null);
+      sounds.playSlide();
+    }
+  };
+
+  // Keyboard shortcut: Ctrl+Z / Cmd+Z to undo
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        handleUndo();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [history, isOnlineSession, gameMode, humanHouse]);
 
   // Bot Turn Automation with natural turn delay
   useEffect(() => {
@@ -687,6 +745,8 @@ export const App: React.FC = () => {
           }
           phase={gameState.phase}
           setupCount={gameState.setupCount[currentHouse] ?? 0}
+          onUndo={handleUndo}
+          canUndo={history.length > 0 && !isOnlineSession}
         />
       </div>
 

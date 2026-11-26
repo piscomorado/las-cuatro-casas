@@ -12,6 +12,8 @@ export interface HandTrayProps {
   hasSovereignOnBoard: boolean;
   phase?: 'setup' | 'play';
   setupCount?: number;
+  onUndo?: () => void;
+  canUndo?: boolean;
 }
 
 const HOUSE_CONFIGS: Record<House, { name: string; border: string; bg: string; activeGlow: string }> = {
@@ -41,6 +43,8 @@ export const HandTray: React.FC<HandTrayProps> = ({
   hasSovereignOnBoard,
   phase = 'play',
   setupCount = 0,
+  onUndo,
+  canUndo = false,
 }) => {
   const config = HOUSE_CONFIGS[house];
 
@@ -74,9 +78,26 @@ export const HandTray: React.FC<HandTrayProps> = ({
             </span>
           )}
         </div>
-        <span className="text-xs text-slate-300 font-medium">
-          {isSetup ? `Apertura (${setupCount + 1}/3)` : `${handPieces.length} fichas en reserva`}
-        </span>
+        <div className="flex items-center gap-2 sm:gap-3">
+          <span className="text-xs text-slate-300 font-medium">
+            {isSetup ? `Apertura (${setupCount + 1}/3)` : `${handPieces.length} en reserva`}
+          </span>
+          {onUndo && (
+            <button
+              onClick={onUndo}
+              disabled={!canUndo}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg border text-xs font-semibold transition-all ${
+                canUndo
+                  ? 'bg-slate-800/90 border-slate-600/80 text-amber-300 hover:bg-slate-700 hover:text-amber-200 hover:border-amber-400 active:scale-95 shadow-sm cursor-pointer'
+                  : 'bg-slate-900/40 border-slate-800/40 text-slate-600 cursor-not-allowed opacity-40'
+              }`}
+              title={canUndo ? 'Regresar jugada anterior (Ctrl+Z)' : 'No hay jugadas anteriores para regresar'}
+            >
+              <span className="text-sm font-bold leading-none">↩</span>
+              <span className="text-[11px] tracking-wide">Regresar</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Clear contextual badge according to turn / phase */}
