@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { PieceType, House } from '@lcch/engine';
 import { CAZADOR_SPRITESHEET_B64 } from '../assets/vfx/cazador_b64';
 import { EXPLORADOR_SPRITESHEET_B64 } from '../assets/vfx/explorador_b64';
+import { BESTIA_SPRITESHEET_B64 } from '../assets/vfx/bestia_b64';
 
 export interface ComicClashEvent {
   id: string;
@@ -94,6 +95,14 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
           />
         </clipPath>
         <clipPath id="explorador-frame-clip">
+          <rect
+            x={-HALF_SIZE}
+            y={-HALF_SIZE}
+            width={FRAME_RENDER_SIZE}
+            height={FRAME_RENDER_SIZE}
+          />
+        </clipPath>
+        <clipPath id="bestia-frame-clip">
           <rect
             x={-HALF_SIZE}
             y={-HALF_SIZE}
@@ -200,8 +209,29 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
         </g>
       )}
 
-      {/* 5. Kinetic Shockwave for other piece types awaiting their custom 12-frame strips */}
-      {attackerType !== 'CZ' && attackerType !== 'EX' && (
+      {/* 5. Feral Beast Downward Spatial Claw Slash for Bestia Saltadora (BS) */}
+      {attackerType === 'BS' && (
+        <g transform={`translate(${midX}, ${midY})`}>
+          <g clipPath="url(#bestia-frame-clip)">
+            <image
+              href={BESTIA_SPRITESHEET_B64}
+              xlinkHref={BESTIA_SPRITESHEET_B64}
+              x={-HALF_SIZE - frameIndex * FRAME_RENDER_SIZE}
+              y={-HALF_SIZE}
+              width={FRAME_RENDER_SIZE * TOTAL_FRAMES}
+              height={FRAME_RENDER_SIZE}
+              style={{
+                opacity: 1,
+                imageRendering: 'auto',
+                filter: 'drop-shadow(0 0 12px rgba(234, 88, 12, 0.45))',
+              }}
+            />
+          </g>
+        </g>
+      )}
+
+      {/* 6. Kinetic Shockwave for other piece types awaiting their custom 12-frame strips */}
+      {attackerType !== 'CZ' && attackerType !== 'EX' && attackerType !== 'BS' && (
         <g transform={`translate(${midX}, ${midY})`}>
           <circle cx="0" cy="0" r="48" fill="#020617" opacity="0.65" />
           <circle
