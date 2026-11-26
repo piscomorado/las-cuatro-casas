@@ -283,7 +283,11 @@ export const App: React.FC = () => {
     initGame({ seed: 1001, houses: activeHouses, randomStart: true })
   );
   const [selectedPiece, setSelectedPiece] = useState<Piece | null>(null);
-  const [history, setHistory] = useState<{ gameState: GameState; lastMove: LastMoveInfo | null }[]>([]);
+  const [undoGrace, setUndoGrace] = useState<{
+    secondsLeft: number;
+    actingHouse: House;
+    prevSnapshot: { gameState: GameState; lastMove: LastMoveInfo | null };
+  } | null>(null);
   const isBotThinking = useRef(false);
 
   const currentHouse = gameState.aliveHouses[gameState.currentHouseIndex] as House;
@@ -296,6 +300,7 @@ export const App: React.FC = () => {
   }, [gameState, currentHouse]);
 
   const handleSelectPiece = (piece: Piece | null) => {
+    if (undoGrace !== null) return; // Prevent selection while 5s grace window is ticking
     if (isCurrentPlayerBot) return; // Prevent human selection during bot turn
     if (isOnlineSession && currentHouse !== onlineMyHouse) return; // In online mode, only select on your turn
     setSelectedPiece(piece);
@@ -303,14 +308,11 @@ export const App: React.FC = () => {
 
   const handleExecuteAction = (action: Action) => {
     if (isOnlineSession && currentHouse !== onlineMyHouse) return; // In online mode, only act on your turn
+    if (undoGrace !== null) return; // Wait during 5s undo grace period
 
+    const prevSnapshot = { gameState, lastMove };
     const res = applyAction(gameState, action);
     if (res.success) {
-      // Save snapshot for undo BEFORE updating state (local/bot play only)
-      if (!isOnlineSession) {
-        setHistory((prev) => [...prev, { gameState, lastMove }]);
-      }
-
       // Sound feedback based on action type
       if (action.type === 'PlacePiece') {
         sounds.playPlaceTile();
@@ -368,6 +370,15 @@ export const App: React.FC = () => {
         }
       }
 
+      // 5-second undo grace window (for testing moves & animations before passing turn)
+      if (!isOnlineSession) {
+        setUndoGrace({
+          secondsLeft: 5,
+          actingHouse: action.house,
+          prevSnapshot,
+        });
+      }
+
       // Broadcast action to online peers
       if (isOnlineSession) {
         multiplayerManagerRef.current?.sendAction(action, res.state, newLastMove);
@@ -386,7 +397,7 @@ export const App: React.FC = () => {
     setGameState(newState);
     setSelectedPiece(null);
     setLastMove(null);
-    setHistory([]);
+    setUndoGrace(null);
     setClashEvent(null);
     isBotThinking.current = false;
 
@@ -395,45 +406,37 @@ export const App: React.FC = () => {
     }
   };
 
-  const handleUndo = () => {
-    if (history.length === 0 || isOnlineSession) return;
+  // 5-second countdown timer for undo grace period
+  useEffect(() => {
+    if (!undoGrace) return;
 
-    if (gameMode === 'bot') {
-      // In bot mode, rewind back to the player's prior turn
-      let targetIndex = -1;
-      for (let i = history.length - 1; i >= 0; i--) {
-        const snap = history[i]!;
-        const snapCurrentHouse = snap.gameState.aliveHouses[snap.gameState.currentHouseIndex];
-        if (snapCurrentHouse === humanHouse) {
-          targetIndex = i;
-          break;
+    const timer = setInterval(() => {
+      setUndoGrace((prev) => {
+        if (!prev) return null;
+        if (prev.secondsLeft <= 1) {
+          return null; // Grace period expired -> turn passes to next player
         }
-      }
+        return { ...prev, secondsLeft: prev.secondsLeft - 1 };
+      });
+    }, 1000);
 
-      if (targetIndex >= 0) {
-        const targetSnap = history[targetIndex]!;
-        setHistory((prev) => prev.slice(0, targetIndex));
-        setGameState(targetSnap.gameState);
-        setLastMove(targetSnap.lastMove);
-        setSelectedPiece(null);
-        setClashEvent(null);
-        isBotThinking.current = false;
-        sounds.playSlide();
-      }
-    } else {
-      // In local PvP mode, undo the last single move
-      const lastIndex = history.length - 1;
-      const targetSnap = history[lastIndex]!;
-      setHistory((prev) => prev.slice(0, lastIndex));
-      setGameState(targetSnap.gameState);
-      setLastMove(targetSnap.lastMove);
-      setSelectedPiece(null);
-      setClashEvent(null);
-      sounds.playSlide();
-    }
+    return () => clearInterval(timer);
+  }, [undoGrace?.secondsLeft]);
+
+  const handleUndo = () => {
+    if (!undoGrace || isOnlineSession) return;
+
+    const { prevSnapshot } = undoGrace;
+    setUndoGrace(null);
+    setGameState(prevSnapshot.gameState);
+    setLastMove(prevSnapshot.lastMove);
+    setSelectedPiece(null);
+    setClashEvent(null);
+    isBotThinking.current = false;
+    sounds.playSlide();
   };
 
-  // Keyboard shortcut: Ctrl+Z / Cmd+Z to undo
+  // Keyboard shortcut: Ctrl+Z / Cmd+Z to undo during the 5s window
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
@@ -443,11 +446,11 @@ export const App: React.FC = () => {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [history, isOnlineSession, gameMode, humanHouse]);
+  }, [undoGrace, isOnlineSession]);
 
-  // Bot Turn Automation with natural turn delay
+  // Bot Turn Automation with natural turn delay (waits for undo grace window to finish)
   useEffect(() => {
-    if (gameState.status !== 'playing' || !isCurrentPlayerBot) return;
+    if (gameState.status !== 'playing' || !isCurrentPlayerBot || undoGrace !== null) return;
     if (isBotThinking.current) return;
 
     isBotThinking.current = true;
@@ -465,7 +468,7 @@ export const App: React.FC = () => {
       clearTimeout(timer);
       isBotThinking.current = false;
     };
-  }, [gameState, isCurrentPlayerBot, currentHouse, botDifficulty]);
+  }, [gameState, isCurrentPlayerBot, currentHouse, botDifficulty, undoGrace]);
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-slate-950 select-none">
@@ -732,21 +735,23 @@ export const App: React.FC = () => {
       {/* Floating Bottom Active Hand Tray & Action Bar */}
       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 max-w-xl w-[92vw] pointer-events-auto">
         <HandTray
-          house={currentHouse}
+          house={undoGrace ? undoGrace.actingHouse : currentHouse}
           pieces={Object.values(gameState.pieces)}
-          isActive={gameState.status === 'playing' && (!isOnlineSession || onlineMyHouse === currentHouse)}
+          isActive={undoGrace ? true : (gameState.status === 'playing' && (!isOnlineSession || onlineMyHouse === currentHouse))}
           selectedPiece={selectedPiece}
           onSelectPiece={handleSelectPiece}
-          ownTurn={gameState.ownTurns[currentHouse] ?? 0}
+          ownTurn={gameState.ownTurns[undoGrace ? undoGrace.actingHouse : currentHouse] ?? 0}
           hasSovereignOnBoard={
             Object.values(gameState.pieces).some(
-              (p) => p.house === currentHouse && p.type === 'SO' && p.location === 'board'
+              (p) => p.house === (undoGrace ? undoGrace.actingHouse : currentHouse) && p.type === 'SO' && p.location === 'board'
             )
           }
           phase={gameState.phase}
-          setupCount={gameState.setupCount[currentHouse] ?? 0}
+          setupCount={gameState.setupCount[undoGrace ? undoGrace.actingHouse : currentHouse] ?? 0}
           onUndo={handleUndo}
-          canUndo={history.length > 0 && !isOnlineSession}
+          canUndo={undoGrace !== null && !isOnlineSession}
+          undoSecondsLeft={undoGrace?.secondsLeft ?? null}
+          onSkipUndo={() => setUndoGrace(null)}
         />
       </div>
 

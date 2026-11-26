@@ -14,6 +14,8 @@ export interface HandTrayProps {
   setupCount?: number;
   onUndo?: () => void;
   canUndo?: boolean;
+  undoSecondsLeft?: number | null;
+  onSkipUndo?: () => void;
 }
 
 const HOUSE_CONFIGS: Record<House, { name: string; border: string; bg: string; activeGlow: string }> = {
@@ -45,6 +47,8 @@ export const HandTray: React.FC<HandTrayProps> = ({
   setupCount = 0,
   onUndo,
   canUndo = false,
+  undoSecondsLeft = null,
+  onSkipUndo,
 }) => {
   const config = HOUSE_CONFIGS[house];
 
@@ -72,30 +76,47 @@ export const HandTray: React.FC<HandTrayProps> = ({
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <span className="font-title font-bold text-sm tracking-wide text-white">{config.name}</span>
-          {isActive && (
+          {undoSecondsLeft ? (
+            <span className="text-[10px] uppercase font-extrabold px-2 py-0.5 rounded-full bg-amber-500/30 text-amber-200 border border-amber-500/40 animate-pulse">
+              Esperando ({undoSecondsLeft}s)
+            </span>
+          ) : isActive ? (
             <span className="text-[10px] uppercase font-extrabold px-2 py-0.5 rounded-full bg-white/20 text-white animate-pulse">
               Turno Activo
             </span>
-          )}
+          ) : null}
         </div>
         <div className="flex items-center gap-2 sm:gap-3">
           <span className="text-xs text-slate-300 font-medium">
             {isSetup ? `Apertura (${setupCount + 1}/3)` : `${handPieces.length} en reserva`}
           </span>
           {onUndo && (
-            <button
-              onClick={onUndo}
-              disabled={!canUndo}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg border text-xs font-semibold transition-all ${
-                canUndo
-                  ? 'bg-slate-800/90 border-slate-600/80 text-amber-300 hover:bg-slate-700 hover:text-amber-200 hover:border-amber-400 active:scale-95 shadow-sm cursor-pointer'
-                  : 'bg-slate-900/40 border-slate-800/40 text-slate-600 cursor-not-allowed opacity-40'
-              }`}
-              title={canUndo ? 'Regresar jugada anterior (Ctrl+Z)' : 'No hay jugadas anteriores para regresar'}
-            >
-              <span className="text-sm font-bold leading-none">↩</span>
-              <span className="text-[11px] tracking-wide">Regresar</span>
-            </button>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={onUndo}
+                disabled={!canUndo}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-semibold transition-all ${
+                  canUndo
+                    ? 'bg-amber-500/20 border-amber-500/80 text-amber-200 hover:bg-amber-500/30 hover:border-amber-400 active:scale-95 shadow-md shadow-amber-950/40 cursor-pointer animate-pulse'
+                    : 'bg-slate-900/40 border-slate-800/40 text-slate-600 cursor-not-allowed opacity-40'
+                }`}
+                title={canUndo ? `Regresar jugada (${undoSecondsLeft ?? 5}s restantes)` : 'No hay jugadas anteriores para regresar'}
+              >
+                <span className="text-sm font-bold leading-none">↩</span>
+                <span className="text-[11px] tracking-wide">
+                  Regresar {undoSecondsLeft ? `(${undoSecondsLeft}s)` : ''}
+                </span>
+              </button>
+              {canUndo && onSkipUndo && (
+                <button
+                  onClick={onSkipUndo}
+                  className="px-2 py-1 rounded-lg border border-slate-700/80 bg-slate-800/70 text-slate-300 hover:text-white hover:bg-slate-700 hover:border-slate-500 text-[11px] font-medium transition-all cursor-pointer"
+                  title="Continuar inmediatamente sin esperar los 5 segundos"
+                >
+                  Seguir ⏭
+                </button>
+              )}
+            </div>
           )}
         </div>
       </div>
