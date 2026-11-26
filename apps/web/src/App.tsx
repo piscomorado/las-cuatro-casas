@@ -46,6 +46,7 @@ export const App: React.FC = () => {
   // Comic Clash Animation State
   const [clashEvent, setClashEvent] = useState<ComicClashEvent | null>(null);
   const [comicAnimationsEnabled, setComicAnimationsEnabled] = useState(true);
+  const [logoExpanded, setLogoExpanded] = useState(false);
 
   const checkSovereignClash = (action: Action, prevState: GameState, _nextState: GameState): ComicClashEvent | null => {
     if (!('to' in action) || !action.to) return null;
@@ -368,12 +369,29 @@ export const App: React.FC = () => {
         <header className="absolute top-4 left-6 right-6 z-20 flex items-center justify-between pointer-events-none">
           {/* Top Left Title Header */}
           <div className="flex items-center gap-3">
-            <div className="pointer-events-auto flex items-center gap-3 bg-slate-900/90 backdrop-blur-md border border-slate-800/80 rounded-2xl px-4 py-2 shadow-2xl">
-              <img
-                src="/assets/savage_gods_logo.png"
-                alt="Savage Gods"
-                className="h-10 w-auto object-contain drop-shadow-[0_2px_12px_rgba(245,158,11,0.35)]"
-              />
+            <div
+              onClick={() => setLogoExpanded(!logoExpanded)}
+              className="pointer-events-auto flex items-center bg-slate-900/90 backdrop-blur-md border border-slate-800/80 rounded-2xl p-2.5 shadow-2xl transition-all duration-300 cursor-pointer hover:border-amber-500/50"
+              title={gameState.phase === 'play' && !logoExpanded ? 'Savage Gods — Clic para expandir logo' : 'Savage Gods'}
+            >
+              {gameState.phase === 'play' && !logoExpanded ? (
+                <img
+                  src="/assets/savage_gods_v_flame.png"
+                  alt="Savage Gods"
+                  className="h-11 w-auto object-contain drop-shadow-[0_2px_14px_rgba(245,158,11,0.5)] transition-transform duration-300 hover:scale-110"
+                />
+              ) : (
+                <div className="flex items-center gap-3.5 px-3 py-1">
+                  <img
+                    src="/assets/savage_gods_v_flame.png"
+                    alt="Savage Gods Crest"
+                    className="h-12 w-auto object-contain drop-shadow-[0_2px_14px_rgba(245,158,11,0.5)]"
+                  />
+                  <h1 className="font-title font-black text-2xl md:text-3xl tracking-widest uppercase text-white drop-shadow-[0_2px_12px_rgba(255,255,255,0.35)] select-none">
+                    SAVAGE GODS
+                  </h1>
+                </div>
+              )}
             </div>
 
             {/* Online Status Pill */}
