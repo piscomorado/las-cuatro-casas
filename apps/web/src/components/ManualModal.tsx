@@ -126,12 +126,25 @@ export const ManualModal: React.FC<ManualModalProps> = ({
               <p className="text-[11px] text-slate-400">Reglamento v0.4 con demostración gráfica interactiva</p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 flex items-center justify-center font-bold text-sm transition-colors"
-          >
-            ✕
-          </button>
+          <div className="flex items-center gap-2">
+            <a
+              href="/Savage_Gods_Manual_Oficial.pdf"
+              download="Savage_Gods_Manual_Oficial.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/50 text-amber-300 hover:text-amber-200 text-xs font-bold flex items-center gap-1.5 transition-all shadow-md"
+              title="Descargar Manual Oficial Completo en PDF"
+            >
+              <span>📥</span>
+              <span className="hidden sm:inline">Descargar PDF</span>
+            </a>
+            <button
+              onClick={onClose}
+              className="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 flex items-center justify-center font-bold text-sm transition-colors"
+            >
+              ✕
+            </button>
+          </div>
         </div>
 
         {/* Tab Navigation */}
