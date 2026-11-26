@@ -5,6 +5,7 @@ import { EXPLORADOR_SPRITESHEET_B64 } from '../assets/vfx/explorador_b64';
 import { BESTIA_SPRITESHEET_B64 } from '../assets/vfx/bestia_b64';
 import { GIGANTE_SPRITESHEET_B64 } from '../assets/vfx/gigante_b64';
 import { HECHICERO_SPRITESHEET_B64 } from '../assets/vfx/hechicero_b64';
+import { NIGROMANTE_SPRITESHEET_B64 } from '../assets/vfx/nigromante_b64';
 
 export interface ComicClashEvent {
   id: string;
@@ -31,6 +32,8 @@ const GIGANTE_RENDER_SIZE = 285; // Colossal Runic Obsidian War Hammer presence
 const GIGANTE_HALF_SIZE = GIGANTE_RENDER_SIZE / 2;
 const HECHICERO_RENDER_SIZE = 275; // Astral Mirror & Runic Prism Cage presence
 const HECHICERO_HALF_SIZE = HECHICERO_RENDER_SIZE / 2;
+const NIGROMANTE_RENDER_SIZE = 280; // Ceremonial Jade Skull & Soulfire Vortex presence
+const NIGROMANTE_HALF_SIZE = NIGROMANTE_RENDER_SIZE / 2;
 
 /**
  * 100% Reliable Embedded Spritesheet VFX Overlay.
@@ -50,16 +53,19 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
     setVisible(true);
     setFrameIndex(0);
 
-    // Natural 12-Frame Rhythm with dedicated slow-motion holds for Bestia (BS), Gigante (GI), and Hechicero (HE):
+    // Natural 12-Frame Rhythm with dedicated slow-motion holds for Bestia (BS), Gigante (GI), Hechicero (HE), and Nigromante (NI):
     const isBestia = clash.attackerType === 'BS';
     const isGigante = clash.attackerType === 'GI';
     const isHechicero = clash.attackerType === 'HE';
+    const isNigromante = clash.attackerType === 'NI';
     const frameDurations = isBestia
       ? [35, 40, 45, 50, 65, 140, 240, 320, 180, 85, 75, 65]
       : isGigante
       ? [100, 120, 130, 100, 90, 120, 340, 260, 160, 100, 80, 70]
       : isHechicero
       ? [70, 80, 85, 95, 100, 120, 480, 140, 120, 90, 75, 65] // Frame 7 (idx 6) peak halo & crystal cage hold
+      : isNigromante
+      ? [70, 80, 85, 95, 100, 120, 500, 140, 120, 90, 75, 65] // Frame 7 (idx 6) peak vortex & spiked star seal hold
       : [40, 45, 50, 50, 55, 60, 180, 260, 140, 65, 60, 55];
     let cur = 0;
     let timerId: any;
@@ -135,6 +141,14 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
             y={-HECHICERO_HALF_SIZE}
             width={HECHICERO_RENDER_SIZE}
             height={HECHICERO_RENDER_SIZE}
+          />
+        </clipPath>
+        <clipPath id="nigromante-frame-clip">
+          <rect
+            x={-NIGROMANTE_HALF_SIZE}
+            y={-NIGROMANTE_HALF_SIZE}
+            width={NIGROMANTE_RENDER_SIZE}
+            height={NIGROMANTE_RENDER_SIZE}
           />
         </clipPath>
       </defs>
@@ -366,8 +380,57 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
         </g>
       )}
 
-      {/* 8. Kinetic Shockwave for other piece types awaiting their custom 12-frame strips */}
-      {attackerType !== 'CZ' && attackerType !== 'EX' && attackerType !== 'BS' && attackerType !== 'GI' && attackerType !== 'HE' && (
+      {/* 8. Ceremonial Runic Jade Skull & Soulfire Vortex for Nigromante (NI) */}
+      {attackerType === 'NI' && (
+        <g transform={`translate(${midX}, ${midY})`}>
+          {/* Luminous Soulfire Runic Star Ring during Frame 7 Climax */}
+          {frameIndex === 6 && (
+            <g>
+              <ellipse
+                cx="0"
+                cy="68"
+                rx="84"
+                ry="34"
+                fill="none"
+                stroke="#10b981"
+                strokeWidth="2.5"
+                opacity="0.9"
+                filter="drop-shadow(0 0 18px rgba(16, 185, 129, 0.95))"
+              />
+              <circle
+                cx="0"
+                cy="68"
+                r="50"
+                fill="none"
+                stroke="#06b6d4"
+                strokeWidth="1.8"
+                strokeDasharray="10 6"
+                opacity="0.8"
+                filter="drop-shadow(0 0 14px rgba(6, 182, 212, 0.9))"
+              />
+            </g>
+          )}
+          <g clipPath="url(#nigromante-frame-clip)">
+            <image
+              href={NIGROMANTE_SPRITESHEET_B64}
+              xlinkHref={NIGROMANTE_SPRITESHEET_B64}
+              x={-NIGROMANTE_HALF_SIZE - frameIndex * NIGROMANTE_RENDER_SIZE}
+              y={-NIGROMANTE_HALF_SIZE}
+              width={NIGROMANTE_RENDER_SIZE * TOTAL_FRAMES}
+              height={NIGROMANTE_RENDER_SIZE}
+              style={{
+                opacity: 1,
+                imageRendering: 'auto',
+                filter:
+                  'drop-shadow(0 0 20px rgba(16, 185, 129, 0.95)) drop-shadow(0 0 42px rgba(6, 182, 212, 0.7)) contrast(1.18) brightness(1.12)',
+              }}
+            />
+          </g>
+        </g>
+      )}
+
+      {/* 9. Kinetic Shockwave for other piece types awaiting their custom 12-frame strips */}
+      {attackerType !== 'CZ' && attackerType !== 'EX' && attackerType !== 'BS' && attackerType !== 'GI' && attackerType !== 'HE' && attackerType !== 'NI' && (
         <g transform={`translate(${midX}, ${midY})`}>
           <circle cx="0" cy="0" r="48" fill="#020617" opacity="0.65" />
           <circle
