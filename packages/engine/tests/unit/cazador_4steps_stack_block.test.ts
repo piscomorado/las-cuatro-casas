@@ -122,7 +122,7 @@ describe('Manual v0.4 §6 & Hoja única: Cazador (CZ)', () => {
     expect(reached30).toBe(true);
   });
 
-  it('can make a 1-step move to an adjacent empty space touching the hive', () => {
+  it('CANNOT step into an adjacent empty space without jumping over a piece (over === 0 is illegal)', () => {
     let state = initGame();
     // Cazador at (0,0), hive piece at (1,0)
     // (0,1) is empty and touches (0,0) and (1,0)
@@ -134,6 +134,6 @@ describe('Manual v0.4 §6 & Hoja única: Cazador (CZ)', () => {
     state = { ...state, board: newBoard };
     const moves = getCazadorMoves({ q: 0, r: 0 }, state, new Set(['0,0', '1,0']));
     const reached01 = moves.some((m) => m.q === 0 && m.r === 1);
-    expect(reached01).toBe(true);
+    expect(reached01).toBe(false);
   });
 });

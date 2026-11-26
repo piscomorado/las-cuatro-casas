@@ -37,7 +37,7 @@ export const HexBoard: React.FC<HexBoardProps> = ({
 
   // Screen shake on critical siege
   useEffect(() => {
-    if (clashEvent && comicAnimationsEnabled && clashEvent.siegeCount >= 5) {
+    if (clashEvent && comicAnimationsEnabled && (clashEvent.siegeCount ?? 0) >= 5) {
       setIsShaking(true);
       const timer = setTimeout(() => setIsShaking(false), 500);
       return () => clearTimeout(timer);

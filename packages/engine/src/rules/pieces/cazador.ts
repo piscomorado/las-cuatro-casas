@@ -49,6 +49,11 @@ export function getCazadorMoves(
       }
 
       // Cell is empty (stackHeight === 0)
+      if (over === 0) {
+        // Cazador MUST jump over at least 1 piece. Cannot step into an adjacent empty space!
+        break;
+      }
+
       // Landing rule: must touch the remaining formation
       const touchesHive = getNeighbors(curr).some((n) => {
         const nKey = coordToKey(n);
@@ -61,8 +66,8 @@ export function getCazadorMoves(
         }
       }
 
-      // Lands on the first empty space (1-step step or jump over 1-3 pieces).
-      // Stops immediately so it cannot jump through empty air to further cells.
+      // Lands on the first empty space immediately after jumping over 1-3 pieces.
+      // Cannot jump through empty air or skip empty cells.
       break;
     }
   }

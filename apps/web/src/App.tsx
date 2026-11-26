@@ -68,8 +68,7 @@ export const App: React.FC = () => {
         p.type === 'SO' &&
         p.location === 'board' &&
         p.cellKey &&
-        nextState.aliveHouses.includes(p.house) &&
-        p.house !== action.house
+        nextState.aliveHouses.includes(p.house)
       ) {
         const soCoord = keyToCoord(p.cellKey);
         const isAdj = getNeighbors(soCoord).some((nb) => nb.q === destCoord.q && nb.r === destCoord.r);
@@ -110,6 +109,21 @@ export const App: React.FC = () => {
         }
       }
     }
+
+    // Cazador signature energy slash triggers on any jump move as well
+    if (actingPieceType === 'CZ' && action.type === 'MovePiece') {
+      sounds.playSwordSlash();
+      return {
+        id: `${Date.now()}-${coordToKey(destCoord)}`,
+        attackerType: 'CZ',
+        attackerHouse: action.house,
+        fromPixel: action.from ? hexToPixel(action.from, HEX_SIZE) : undefined,
+        toPixel: destPixel,
+        sovereignPixel: undefined,
+        siegeCount: 0,
+      };
+    }
+
     return null;
   };
 
@@ -154,7 +168,12 @@ export const App: React.FC = () => {
         }
         if (comicAnimationsEnabled) {
           const clash = checkSovereignClash(action, gameState, nextState);
-          setClashEvent(clash);
+          setClashEvent(null);
+          if (clash) {
+            requestAnimationFrame(() => {
+              setClashEvent(clash);
+            });
+          }
         }
       },
       onPlayerConnected: (player) => {
@@ -337,10 +356,15 @@ export const App: React.FC = () => {
       setGameState(res.state);
       setSelectedPiece(null);
 
-      // Check for Comic Clash Animation against enemy Sovereigns
+      // Check for Comic Clash Animation against Sovereigns or Hunter jumps
       if (comicAnimationsEnabled) {
         const clash = checkSovereignClash(action, gameState, res.state);
-        setClashEvent(clash);
+        setClashEvent(null);
+        if (clash) {
+          requestAnimationFrame(() => {
+            setClashEvent(clash);
+          });
+        }
       }
 
       // Broadcast action to online peers

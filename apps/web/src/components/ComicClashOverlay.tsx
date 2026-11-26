@@ -1,15 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { PieceType, House } from '@lcch/engine';
 
+const cazadorSlashImg = '/assets/vfx/cazador_slash.png';
+
 export interface ComicClashEvent {
   id: string;
   attackerType: PieceType;
   attackerHouse: House;
-  targetHouse: House;
+  targetHouse?: House;
   fromPixel?: { x: number; y: number };
   toPixel: { x: number; y: number };
-  sovereignPixel: { x: number; y: number };
-  siegeCount: number; // 1 to 6
+  sovereignPixel?: { x: number; y: number };
+  siegeCount?: number; // 1 to 6
 }
 
 export interface ComicClashOverlayProps {
@@ -26,7 +28,9 @@ const HOUSE_COLORS: Record<House, { primary: string; secondary: string; glow: st
 
 /**
  * Pure Action Comic Illustration Overlay (Zero Text, Zero Numbers).
- * High-impact vector graphics with bold line weight, speed sparks, and smooth fade-out.
+ * Renders high-impact illustrations (starting with the Cazador energy X-slash)
+ * with native alpha transparency, dynamic drop shadows, and cinematic scale transitions.
+ * Previous simple vector animations have been cleaned up as requested.
  */
 export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onAnimationEnd }) => {
   const [visible, setVisible] = useState(false);
@@ -37,8 +41,10 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
       const timer = setTimeout(() => {
         setVisible(false);
         if (onAnimationEnd) onAnimationEnd();
-      }, 2400);
+      }, 2200);
       return () => clearTimeout(timer);
+    } else {
+      setVisible(false);
     }
   }, [clash?.id]);
 
@@ -47,23 +53,20 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
   const { attackerType, attackerHouse, toPixel, sovereignPixel } = clash;
   const colors = HOUSE_COLORS[attackerHouse] || HOUSE_COLORS.red;
 
-  // Midpoint between attacking piece and target sovereign
-  const midX = (toPixel.x + sovereignPixel.x) / 2;
-  const midY = (toPixel.y + sovereignPixel.y) / 2;
-
-  // Angle from attacker to sovereign
-  const angleDeg = (Math.atan2(sovereignPixel.y - toPixel.y, sovereignPixel.x - toPixel.x) * 180) / Math.PI;
+  // Safe position calculations (never NaN)
+  const targetX = sovereignPixel ? sovereignPixel.x : toPixel.x;
+  const targetY = sovereignPixel ? sovereignPixel.y : toPixel.y;
+  const midX = (toPixel.x + targetX) / 2;
+  const midY = (toPixel.y + targetY) / 2;
 
   return (
-    <g pointerEvents="none" className="select-none z-50">
+    <g key={clash.id} pointerEvents="none" className="select-none z-50">
       <defs>
-        {/* Comic High-Intensity Glow Filter */}
-        <filter id="comic-glow-lg" x="-60%" y="-60%" width="220%" height="220%">
-          <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blur1" />
-          <feGaussianBlur in="SourceGraphic" stdDeviation="12" result="blur2" />
+        {/* Glow filter for energy burst */}
+        <filter id="cazador-glow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="blur" />
           <feMerge>
-            <feMergeNode in="blur2" />
-            <feMergeNode in="blur1" />
+            <feMergeNode in="blur" />
             <feMergeNode in="SourceGraphic" />
           </feMerge>
         </filter>
@@ -71,145 +74,25 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
 
       {/* ============================================================== */}
       {/* 1. CAZADOR (CZ) — ULTRA-HD CINEMATIC ENERGY X-SLASH VFX        */}
+      {/* Clean PNG with native alpha transparency                       */}
       {/* ============================================================== */}
       {attackerType === 'CZ' && (
         <g transform={`translate(${midX}, ${midY})`} className="animate-comic-clash">
+          {/* Subtle house color radiant aura behind the slash */}
+          <circle cx="0" cy="0" r="140" fill={colors.glow} opacity="0.25" filter="url(#cazador-glow)" />
+
           <image
-            href="/assets/vfx/cazador_slash.jpg"
-            x="-175"
-            y="-175"
-            width="350"
-            height="350"
+            href={cazadorSlashImg}
+            xlinkHref={cazadorSlashImg}
+            x="-200"
+            y="-200"
+            width="400"
+            height="400"
             preserveAspectRatio="xMidYMid meet"
             style={{
-              mixBlendMode: 'screen',
-              filter: 'drop-shadow(0 0 20px rgba(245, 158, 11, 0.5))',
+              filter: `drop-shadow(0 0 25px ${colors.glow})`,
             }}
           />
-        </g>
-      )}
-
-      {/* ============================================================== */}
-      {/* 2. BESTIA (BS) — PURE 3-CLAW TEAR ILLUSTRATION                */}
-      {/* ============================================================== */}
-      {attackerType === 'BS' && (
-        <g transform={`translate(${midX}, ${midY}) scale(2.0)`} className="animate-comic-clash">
-          {/* Contrast Dark Backdrop Halo */}
-          <circle cx="0" cy="0" r="56" fill="#020617" opacity="0.75" />
-
-          <g transform={`rotate(${angleDeg + 30})`}>
-            {/* 3 Heavy Curved Claws */}
-            {[-25, 0, 25].map((offset, i) => (
-              <path
-                key={i}
-                d={`M ${offset - 46} -60 Q ${offset} 0 ${offset + 36} 60`}
-                stroke="#ffffff"
-                strokeWidth="10"
-                strokeLinecap="round"
-                fill="none"
-                filter="url(#comic-glow-lg)"
-              />
-            ))}
-            {[-25, 0, 25].map((offset, i) => (
-              <path
-                key={`inner-${i}`}
-                d={`M ${offset - 46} -60 Q ${offset} 0 ${offset + 36} 60`}
-                stroke={colors.primary}
-                strokeWidth="4.5"
-                strokeLinecap="round"
-                fill="none"
-              />
-            ))}
-
-            {/* Beast Claw Sparks */}
-            <circle cx="38" cy="56" r="5" fill="#fbbf24" />
-            <circle cx="-42" cy="-54" r="5" fill="#ffffff" />
-            <circle cx="10" cy="10" r="6" fill={colors.secondary} />
-            <circle cx="-15" cy="30" r="4" fill="#fbbf24" />
-            <circle cx="20" cy="-25" r="4.5" fill="#ffffff" />
-          </g>
-        </g>
-      )}
-
-      {/* ============================================================== */}
-      {/* 3. GIGANTE (GI) — PURE TITAN STOMP & SHOCKWAVE CRATER         */}
-      {/* ============================================================== */}
-      {attackerType === 'GI' && (
-        <g transform={`translate(${sovereignPixel.x}, ${sovereignPixel.y}) scale(2.0)`} className="animate-comic-clash">
-          {/* Contrast Dark Backdrop Halo */}
-          <circle cx="0" cy="0" r="58" fill="#020617" opacity="0.75" />
-
-          {/* Concentric Seismic Shockwave Rings */}
-          <circle cx="0" cy="0" r="62" fill="none" stroke={colors.primary} strokeWidth="5" strokeDasharray="12 6" opacity="0.9" />
-          <circle cx="0" cy="0" r="44" fill={colors.glow} opacity="0.45" />
-
-          {/* Bold Comic Ground Fractures */}
-          <path d="M 0 0 L -40 -35 L -58 -30" stroke="#ffffff" strokeWidth="4" fill="none" strokeLinecap="round" />
-          <path d="M 0 0 L 42 -28 L 60 -22" stroke="#ffffff" strokeWidth="4" fill="none" strokeLinecap="round" />
-          <path d="M 0 0 L -35 42 L -50 60" stroke="#ffffff" strokeWidth="4" fill="none" strokeLinecap="round" />
-          <path d="M 0 0 L 38 38 L 55 54" stroke="#ffffff" strokeWidth="4" fill="none" strokeLinecap="round" />
-          <path d="M 0 0 L 0 -55" stroke={colors.secondary} strokeWidth="3" fill="none" strokeLinecap="round" />
-          <path d="M 0 0 L 0 55" stroke={colors.secondary} strokeWidth="3" fill="none" strokeLinecap="round" />
-
-          {/* Giant Titan Footprint Silhouette */}
-          <ellipse cx="0" cy="-2" rx="22" ry="30" fill="#020617" stroke="#fbbf24" strokeWidth="4" />
-          <circle cx="-11" cy="-36" r="5.5" fill="#fbbf24" />
-          <circle cx="-3" cy="-39" r="6" fill="#fbbf24" />
-          <circle cx="5" cy="-38" r="5.5" fill="#fbbf24" />
-          <circle cx="13" cy="-34" r="5" fill="#fbbf24" />
-        </g>
-      )}
-
-      {/* ============================================================== */}
-      {/* 4. EXPLORADOR (EX) — PURE SPEED CYCLONE ILLUSTRATION          */}
-      {/* ============================================================== */}
-      {attackerType === 'EX' && (
-        <g transform={`translate(${sovereignPixel.x}, ${sovereignPixel.y}) scale(2.0)`} className="animate-comic-clash">
-          {/* Contrast Dark Backdrop Halo */}
-          <circle cx="0" cy="0" r="56" fill="#020617" opacity="0.75" />
-
-          {/* Cyclone Speed Arcs */}
-          <path
-            d="M -52 -22 A 56 56 0 0 1 52 -22"
-            stroke="#ffffff"
-            strokeWidth="8"
-            fill="none"
-            strokeLinecap="round"
-            filter="url(#comic-glow-lg)"
-          />
-          <path
-            d="M 52 22 A 56 56 0 0 1 -52 22"
-            stroke={colors.primary}
-            strokeWidth="5.5"
-            fill="none"
-            strokeLinecap="round"
-          />
-
-          {/* Wind Crescent Arrows */}
-          <polygon points="52,-22 68,-26 58,-10" fill="#ffffff" />
-          <polygon points="-52,22 -68,26 -58,10" fill={colors.secondary} />
-          <circle cx="-30" cy="-40" r="3.5" fill="#ffffff" />
-          <circle cx="30" cy="40" r="3.5" fill={colors.secondary} />
-        </g>
-      )}
-
-      {/* ============================================================== */}
-      {/* 5. HECHICERO (HE) / NIGROMANTE (NI) / GENERIC ATTACK          */}
-      {/* ============================================================== */}
-      {(attackerType === 'HE' || attackerType === 'NI' || attackerType === 'SO') && (
-        <g transform={`translate(${midX}, ${midY}) scale(2.0)`} className="animate-comic-clash">
-          {/* Contrast Dark Backdrop Halo */}
-          <circle cx="0" cy="0" r="56" fill="#020617" opacity="0.75" />
-
-          <circle cx="0" cy="0" r="50" fill="none" stroke={colors.primary} strokeWidth="4.5" strokeDasharray="9 6" />
-          <polygon
-            points="0,-40 12,-12 40,0 12,12 0,40 -12,12 -40,0 -12,-12"
-            fill="#ffffff"
-            stroke={colors.primary}
-            strokeWidth="4"
-            filter="url(#comic-glow-lg)"
-          />
-          <circle cx="0" cy="0" r="8" fill={colors.primary} />
         </g>
       )}
     </g>
