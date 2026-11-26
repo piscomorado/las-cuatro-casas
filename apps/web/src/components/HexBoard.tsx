@@ -39,7 +39,7 @@ export const HexBoard: React.FC<HexBoardProps> = ({
   useEffect(() => {
     if (clashEvent && comicAnimationsEnabled && clashEvent.siegeCount >= 5) {
       setIsShaking(true);
-      const timer = setTimeout(() => setIsShaking(false), 350);
+      const timer = setTimeout(() => setIsShaking(false), 500);
       return () => clearTimeout(timer);
     }
   }, [clashEvent?.id]);
