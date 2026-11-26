@@ -70,55 +70,22 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
       </defs>
 
       {/* ============================================================== */}
-      {/* 1. CAZADOR (CZ) — PURE CROSSED BLADE SLASH ILLUSTRATION        */}
+      {/* 1. CAZADOR (CZ) — ULTRA-HD CINEMATIC ENERGY X-SLASH VFX        */}
       {/* ============================================================== */}
       {attackerType === 'CZ' && (
-        <g transform={`translate(${midX}, ${midY}) scale(2.0)`} className="animate-comic-clash">
-          {/* Contrast Dark Backdrop Halo */}
-          <circle cx="0" cy="0" r="56" fill="#020617" opacity="0.75" />
-          <circle cx="0" cy="0" r="48" fill="none" stroke={colors.glow} strokeWidth="2.5" opacity="0.5" />
-
-          {/* Comic Speed Lines */}
-          <g opacity="0.9">
-            <line x1="-58" y1="0" x2="-88" y2="0" stroke={colors.secondary} strokeWidth="3.5" strokeLinecap="round" />
-            <line x1="58" y1="0" x2="88" y2="0" stroke={colors.secondary} strokeWidth="3.5" strokeLinecap="round" />
-            <line x1="0" y1="-58" x2="0" y2="-88" stroke={colors.secondary} strokeWidth="3.5" strokeLinecap="round" />
-            <line x1="0" y1="58" x2="0" y2="88" stroke={colors.secondary} strokeWidth="3.5" strokeLinecap="round" />
-            <line x1="-42" y1="-42" x2="-70" y2="-70" stroke="#ffffff" strokeWidth="3" strokeLinecap="round" />
-            <line x1="42" y1="42" x2="70" y2="70" stroke="#ffffff" strokeWidth="3" strokeLinecap="round" />
-            <line x1="-42" y1="42" x2="-70" y2="70" stroke="#ffffff" strokeWidth="3" strokeLinecap="round" />
-            <line x1="42" y1="-42" x2="70" y2="-70" stroke="#ffffff" strokeWidth="3" strokeLinecap="round" />
-          </g>
-
-          {/* Blade 1 (Top-Left to Bottom-Right) */}
-          <path
-            d="M -70 -58 L 70 58"
-            stroke="#ffffff"
-            strokeWidth="11"
-            strokeLinecap="round"
-            filter="url(#comic-glow-lg)"
+        <g transform={`translate(${midX}, ${midY})`} className="animate-comic-clash">
+          <image
+            href="/assets/vfx/cazador_slash.jpg"
+            x="-175"
+            y="-175"
+            width="350"
+            height="350"
+            preserveAspectRatio="xMidYMid meet"
+            style={{
+              mixBlendMode: 'screen',
+              filter: 'drop-shadow(0 0 20px rgba(245, 158, 11, 0.5))',
+            }}
           />
-          <path d="M -70 -58 L 70 58" stroke={colors.primary} strokeWidth="5" strokeLinecap="round" />
-
-          {/* Blade 2 (Top-Right to Bottom-Left) */}
-          <path
-            d="M 70 -58 L -70 58"
-            stroke="#ffffff"
-            strokeWidth="11"
-            strokeLinecap="round"
-            filter="url(#comic-glow-lg)"
-          />
-          <path d="M 70 -58 L -70 58" stroke={colors.primary} strokeWidth="5" strokeLinecap="round" />
-
-          {/* Center Impact Star Burst */}
-          <polygon
-            points="0,-32 9,-9 32,0 9,9 0,32 -9,9 -32,0 -9,-9"
-            fill="#ffffff"
-            stroke="#f59e0b"
-            strokeWidth="3.5"
-            filter="url(#comic-glow-lg)"
-          />
-          <circle cx="0" cy="0" r="6" fill="#f59e0b" />
         </g>
       )}
 
