@@ -73,7 +73,7 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
 
   if (!clash || !visible) return null;
 
-  const { attackerType, toPixel, sovereignPixel } = clash;
+  const { attackerType, fromPixel, toPixel, sovereignPixel } = clash;
 
   // Position calculation
   const targetX = sovereignPixel ? sovereignPixel.x : toPixel.x;
@@ -94,13 +94,40 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
         </clipPath>
       </defs>
 
+      {/* 1. Kinetic Jump Streak between Origin and Destination (Frames 0-3) */}
+      {attackerType === 'CZ' && fromPixel && frameIndex < 4 && (
+        <line
+          x1={fromPixel.x}
+          y1={fromPixel.y}
+          x2={midX}
+          y2={midY}
+          stroke="#f59e0b"
+          strokeWidth="3"
+          strokeDasharray="16 8"
+          strokeLinecap="round"
+          opacity={frameIndex === 0 ? 0.85 : 0.45}
+        />
+      )}
+
+      {/* 2. Expanding Geometric Impact Ring during Climax (Frames 6-7) */}
+      {attackerType === 'CZ' && (frameIndex === 6 || frameIndex === 7) && (
+        <g transform={`translate(${midX}, ${midY})`}>
+          <circle
+            cx="0"
+            cy="0"
+            r={frameIndex === 6 ? 48 : 64}
+            fill="none"
+            stroke="#fbbf24"
+            strokeWidth="2"
+            opacity={frameIndex === 6 ? 0.6 : 0.3}
+          />
+        </g>
+      )}
+
+      {/* 3. Harmonized Bronze & Gold 12-Frame Animation */}
       {attackerType === 'CZ' && (
         <g transform={`translate(${midX}, ${midY})`}>
           <g clipPath="url(#cazador-frame-clip)">
-            {/* 
-              Single Embedded Spritesheet:
-              Zero network requests, zero broken image icons, zero neighbor leakage!
-            */}
             <image
               href={CAZADOR_SPRITESHEET_B64}
               xlinkHref={CAZADOR_SPRITESHEET_B64}
