@@ -62,7 +62,7 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
     const isHechicero = clash.attackerType === 'HE';
     const isNigromante = clash.attackerType === 'NI';
     const frameDurations = isCazador
-      ? [60, 65, 75, 85, 95, 450, 260, 140, 110, 80, 70, 60] // Frame 6 (idx 5) peak star shockwave & planted javelin hold
+      ? [60, 70, 75, 80, 90, 100, 480, 160, 120, 90, 75, 65] // Frame 7 (idx 6) peak vertical star shockwave & planted javelin hold
       : isBestia
       ? [35, 40, 45, 50, 65, 140, 240, 320, 180, 85, 75, 65]
       : isGigante
@@ -217,28 +217,28 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
       {/* 3. Titan-Hunter Runic Sapphire Javelin Slam for Cazador (CZ) */}
       {attackerType === 'CZ' && (
         <g transform={`translate(${midX}, ${midY})`}>
-          {/* Luminous Sapphire & Gold Ground Impact Ring during Climax (Frames 5-6) - Centered at exact javelin ground tip */}
-          {(frameIndex === 5 || frameIndex === 6) && (
+          {/* Luminous Sapphire & Gold Ground Impact Ring during Climax (Frames 5-7) - Centered at exact javelin ground tip */}
+          {(frameIndex === 5 || frameIndex === 6 || frameIndex === 7) && (
             <g>
               <ellipse
-                cx="16"
-                cy="108"
-                rx={frameIndex === 5 ? 85 : 115}
-                ry={frameIndex === 5 ? 34 : 46}
+                cx="0"
+                cy="114"
+                rx={frameIndex === 6 ? 90 : 65}
+                ry={frameIndex === 6 ? 36 : 26}
                 fill="none"
                 stroke="#38bdf8"
-                strokeWidth={frameIndex === 5 ? '3' : '2'}
-                opacity={frameIndex === 5 ? 0.9 : 0.5}
+                strokeWidth={frameIndex === 6 ? '3.5' : '2'}
+                opacity={frameIndex === 6 ? 0.95 : 0.6}
                 filter="drop-shadow(0 0 16px rgba(56, 189, 248, 0.95))"
               />
               <circle
-                cx="16"
-                cy="108"
-                r={frameIndex === 5 ? 50 : 76}
+                cx="0"
+                cy="114"
+                r={frameIndex === 6 ? 58 : 42}
                 fill="none"
                 stroke="#fbbf24"
-                strokeWidth="1.8"
-                opacity={frameIndex === 5 ? 0.8 : 0.4}
+                strokeWidth={frameIndex === 6 ? '2' : '1.5'}
+                opacity={frameIndex === 6 ? 0.85 : 0.5}
                 filter="drop-shadow(0 0 12px rgba(251, 191, 36, 0.9))"
               />
             </g>
