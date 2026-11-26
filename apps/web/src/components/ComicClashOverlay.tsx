@@ -18,13 +18,6 @@ export interface ComicClashOverlayProps {
   onAnimationEnd?: () => void;
 }
 
-const HOUSE_COLORS: Record<House, { primary: string; secondary: string; glow: string }> = {
-  red: { primary: '#ef4444', secondary: '#fca5a5', glow: 'rgba(239, 68, 68, 0.85)' },
-  blue: { primary: '#3b82f6', secondary: '#93c5fd', glow: 'rgba(59, 130, 246, 0.85)' },
-  green: { primary: '#22c55e', secondary: '#86efac', glow: 'rgba(34, 197, 94, 0.85)' },
-  amber: { primary: '#f59e0b', secondary: '#fde68a', glow: 'rgba(245, 158, 11, 0.85)' },
-};
-
 const TOTAL_FRAMES = 12;
 const FRAME_RENDER_SIZE = 130; // Proportional to hex tile diameter (~84px) for retina crispness
 const HALF_SIZE = FRAME_RENDER_SIZE / 2;
@@ -80,17 +73,13 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
 
   if (!clash || !visible) return null;
 
-  const { attackerType, attackerHouse, toPixel, sovereignPixel } = clash;
-  const colors = HOUSE_COLORS[attackerHouse] || HOUSE_COLORS.amber;
+  const { attackerType, toPixel, sovereignPixel } = clash;
 
   // Position calculation
   const targetX = sovereignPixel ? sovereignPixel.x : toPixel.x;
   const targetY = sovereignPixel ? sovereignPixel.y : toPixel.y;
   const midX = (toPixel.x + targetX) / 2;
   const midY = (toPixel.y + targetY) / 2;
-
-  // Climax state (Frames 6, 7, 8)
-  const isClimax = frameIndex >= 6 && frameIndex <= 8;
 
   return (
     <g key={clash.id} pointerEvents="none" className="select-none z-50">
@@ -121,12 +110,7 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
               height={FRAME_RENDER_SIZE}
               preserveAspectRatio="none"
               style={{
-                filter: isClimax
-                  ? `drop-shadow(0 0 6px ${colors.glow})`
-                  : 'none',
-                transform: `scale(${isClimax ? 1.05 : 1.0})`,
-                transition: 'transform 0.04s ease-out',
-                imageRendering: '-webkit-optimize-contrast',
+                opacity: 1,
               }}
             />
           </g>
