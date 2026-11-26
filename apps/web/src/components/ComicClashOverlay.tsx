@@ -19,7 +19,7 @@ export interface ComicClashOverlayProps {
 }
 
 const TOTAL_FRAMES = 12;
-const FRAME_RENDER_SIZE = 130; // Proportional to hex tile diameter (~84px) for retina crispness
+const FRAME_RENDER_SIZE = 195; // Calibrated to reach halfway into surrounding adjacent hexes
 const HALF_SIZE = FRAME_RENDER_SIZE / 2;
 
 /**
@@ -115,11 +115,11 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
           <circle
             cx="0"
             cy="0"
-            r={frameIndex === 6 ? 48 : 64}
+            r={frameIndex === 6 ? 72 : 96}
             fill="none"
             stroke="#fbbf24"
-            strokeWidth="2"
-            opacity={frameIndex === 6 ? 0.6 : 0.3}
+            strokeWidth="2.5"
+            opacity={frameIndex === 6 ? 0.65 : 0.35}
           />
         </g>
       )}

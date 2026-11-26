@@ -7,7 +7,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        title: ['Cinzel', 'serif'],
+        title: ['"Cinzel Decorative"', 'Cinzel', 'serif'],
         medieval: ['MedievalSharp', 'cursive'],
       },
       colors: {

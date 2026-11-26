@@ -15,7 +15,6 @@ import { HexBoard, LastMoveInfo } from './components/HexBoard';
 import { HandTray } from './components/HandTray';
 import { ManualModal } from './components/ManualModal';
 import { OnlineLobbyModal } from './components/OnlineLobbyModal';
-import { SavageGodsIcon } from './components/SavageGodsIcon';
 import { ComicClashEvent } from './components/ComicClashOverlay';
 import { hexToPixel, HEX_SIZE } from './utils/hexMath';
 import { sounds } from './utils/soundEffects';
@@ -369,11 +368,12 @@ export const App: React.FC = () => {
         <header className="absolute top-4 left-6 right-6 z-20 flex items-center justify-between pointer-events-none">
           {/* Top Left Title Header */}
           <div className="flex items-center gap-3">
-            <div className="pointer-events-auto flex items-center gap-3 bg-slate-900/90 backdrop-blur-md border border-slate-800/80 rounded-2xl px-5 py-2.5 shadow-2xl">
-              <SavageGodsIcon size={32} className="filter drop-shadow-[0_0_8px_rgba(255,255,255,0.35)]" color="#ffffff" />
-              <h1 className="font-title font-black text-2xl tracking-widest uppercase text-white drop-shadow-[0_2px_10px_rgba(255,255,255,0.25)]">
-                SAVAGE GODS
-              </h1>
+            <div className="pointer-events-auto flex items-center gap-3 bg-slate-900/90 backdrop-blur-md border border-slate-800/80 rounded-2xl px-4 py-2 shadow-2xl">
+              <img
+                src="/assets/savage_gods_logo.png"
+                alt="Savage Gods"
+                className="h-10 w-auto object-contain drop-shadow-[0_2px_12px_rgba(245,158,11,0.35)]"
+              />
             </div>
 
             {/* Online Status Pill */}
