@@ -30,11 +30,11 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
   useEffect(() => {
     if (clash) {
       setVisible(true);
-      // Increased duration to 1500ms for a slower, more deliberate, and satisfying presentation
+      // Increased duration to 2400ms for a solid visible hold and smooth fade-out
       const timer = setTimeout(() => {
         setVisible(false);
         if (onAnimationEnd) onAnimationEnd();
-      }, 1500);
+      }, 2400);
       return () => clearTimeout(timer);
     }
   }, [clash?.id]);
