@@ -1,23 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { PieceType, House } from '@lcch/engine';
-
-import frame0 from '../assets/vfx/cazador_frames/frame_0.png';
-import frame1 from '../assets/vfx/cazador_frames/frame_1.png';
-import frame2 from '../assets/vfx/cazador_frames/frame_2.png';
-import frame3 from '../assets/vfx/cazador_frames/frame_3.png';
-import frame4 from '../assets/vfx/cazador_frames/frame_4.png';
-import frame5 from '../assets/vfx/cazador_frames/frame_5.png';
-import frame6 from '../assets/vfx/cazador_frames/frame_6.png';
-import frame7 from '../assets/vfx/cazador_frames/frame_7.png';
-import frame8 from '../assets/vfx/cazador_frames/frame_8.png';
-import frame9 from '../assets/vfx/cazador_frames/frame_9.png';
-import frame10 from '../assets/vfx/cazador_frames/frame_10.png';
-import frame11 from '../assets/vfx/cazador_frames/frame_11.png';
-
-const CAZADOR_FRAMES = [
-  frame0, frame1, frame2, frame3, frame4, frame5,
-  frame6, frame7, frame8, frame9, frame10, frame11,
-];
+import { CAZADOR_SPRITESHEET_B64 } from '../assets/vfx/cazador_b64';
 
 export interface ComicClashEvent {
   id: string;
@@ -42,22 +25,18 @@ const HOUSE_COLORS: Record<House, { primary: string; secondary: string; glow: st
   amber: { primary: '#f59e0b', secondary: '#fde68a', glow: 'rgba(245, 158, 11, 0.85)' },
 };
 
+const TOTAL_FRAMES = 12;
+const FRAME_RENDER_SIZE = 280; // Rendered width/height on board
+const HALF_SIZE = FRAME_RENDER_SIZE / 2;
+
 /**
- * Clean 12-Frame Dark Geometric VFX Overlay for Savage Gods.
- * Plays 12 cleanly separated, zero-leakage progressive keyframes.
- * Climax slow-motion flows through frames 6 -> 7 -> 8 naturally.
+ * 100% Reliable Embedded Spritesheet VFX Overlay.
+ * Uses inlined Base64 data URI to completely eliminate network latency,
+ * aborted requests (ERR_ABORTED), and browser "broken image" fallback icons.
  */
 export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onAnimationEnd }) => {
   const [visible, setVisible] = useState(false);
   const [frameIndex, setFrameIndex] = useState(0);
-
-  // Preload all 12 frames
-  useEffect(() => {
-    CAZADOR_FRAMES.forEach((src) => {
-      const img = new Image();
-      img.src = src;
-    });
-  }, []);
 
   useEffect(() => {
     if (!clash) {
@@ -80,7 +59,7 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
     let timerId: any;
 
     const advance = () => {
-      if (cur < CAZADOR_FRAMES.length - 1) {
+      if (cur < TOTAL_FRAMES - 1) {
         cur++;
         setFrameIndex(cur);
         timerId = setTimeout(advance, frameDurations[cur]);
@@ -115,24 +94,41 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
 
   return (
     <g key={clash.id} pointerEvents="none" className="select-none z-50">
+      <defs>
+        <clipPath id="cazador-frame-clip">
+          <rect
+            x={-HALF_SIZE}
+            y={-HALF_SIZE}
+            width={FRAME_RENDER_SIZE}
+            height={FRAME_RENDER_SIZE}
+          />
+        </clipPath>
+      </defs>
+
       {attackerType === 'CZ' && (
         <g transform={`translate(${midX}, ${midY})`}>
-          <image
-            href={CAZADOR_FRAMES[frameIndex]}
-            xlinkHref={CAZADOR_FRAMES[frameIndex]}
-            x="-150"
-            y="-150"
-            width="300"
-            height="300"
-            preserveAspectRatio="xMidYMid meet"
-            style={{
-              filter: isClimax
-                ? `drop-shadow(0 0 16px ${colors.glow}) drop-shadow(0 0 6px #ffffff)`
-                : `drop-shadow(0 0 8px rgba(245, 158, 11, 0.45))`,
-              transform: `scale(${isClimax ? 1.06 : 1.0})`,
-              transition: 'transform 0.05s ease-out',
-            }}
-          />
+          <g clipPath="url(#cazador-frame-clip)">
+            {/* 
+              Single Embedded Spritesheet:
+              Zero network requests, zero broken image icons, zero neighbor leakage!
+            */}
+            <image
+              href={CAZADOR_SPRITESHEET_B64}
+              xlinkHref={CAZADOR_SPRITESHEET_B64}
+              x={-HALF_SIZE - frameIndex * FRAME_RENDER_SIZE}
+              y={-HALF_SIZE}
+              width={FRAME_RENDER_SIZE * TOTAL_FRAMES}
+              height={FRAME_RENDER_SIZE}
+              preserveAspectRatio="none"
+              style={{
+                filter: isClimax
+                  ? `drop-shadow(0 0 16px ${colors.glow}) drop-shadow(0 0 6px #ffffff)`
+                  : `drop-shadow(0 0 8px rgba(245, 158, 11, 0.45))`,
+                transform: `scale(${isClimax ? 1.06 : 1.0})`,
+                transition: 'transform 0.05s ease-out',
+              }}
+            />
+          </g>
         </g>
       )}
     </g>
