@@ -15,7 +15,11 @@ import {
   BESTIA_VAR2_B64,
   BESTIA_VAR3_B64,
 } from '../assets/vfx/bestia_b64';
-import { GIGANTE_SPRITESHEET_B64 } from '../assets/vfx/gigante_b64';
+import {
+  GIGANTE_VAR1_B64,
+  GIGANTE_VAR2_B64,
+  GIGANTE_VAR3_B64,
+} from '../assets/vfx/gigante_b64';
 import { HECHICERO_SPRITESHEET_B64 } from '../assets/vfx/hechicero_b64';
 import { NIGROMANTE_SPRITESHEET_B64 } from '../assets/vfx/nigromante_b64';
 
@@ -53,8 +57,11 @@ const EXPLORADOR_RENDER_WIDTH = 298; // Calibrated 16:9 ratio covering piece and
 const EXPLORADOR_RENDER_HEIGHT = 168; // Calibrated height to cover piece and reach halfway into surrounding adjacent hexes
 const EXPLORADOR_HALF_WIDTH = EXPLORADOR_RENDER_WIDTH / 2;
 const EXPLORADOR_HALF_HEIGHT = EXPLORADOR_RENDER_HEIGHT / 2;
-const GIGANTE_RENDER_SIZE = 285; // Colossal Runic Obsidian War Hammer presence
-const GIGANTE_HALF_SIZE = GIGANTE_RENDER_SIZE / 2;
+const GIGANTE_FRAMES = 30;
+const GIGANTE_RENDER_WIDTH = 374; // Colossal Cyclops Titan presence (25% larger than normal pieces)
+const GIGANTE_RENDER_HEIGHT = 210;
+const GIGANTE_HALF_WIDTH = GIGANTE_RENDER_WIDTH / 2;
+const GIGANTE_HALF_HEIGHT = GIGANTE_RENDER_HEIGHT / 2;
 const HECHICERO_RENDER_SIZE = 275; // Astral Mirror & Runic Prism Cage presence
 const HECHICERO_HALF_SIZE = HECHICERO_RENDER_SIZE / 2;
 const NIGROMANTE_RENDER_SIZE = 280; // Ceremonial Jade Skull & Soulfire Vortex presence
@@ -92,7 +99,7 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
       : isExplorador
       ? Array(30).fill(38) // Silky-smooth 26fps continuous video timing for Angelic Explorador (38ms per frame, 100% fluid)
       : isGigante
-      ? [100, 120, 130, 100, 90, 120, 340, 260, 160, 100, 80, 70]
+      ? Array(30).fill(38) // Silky-smooth 26fps continuous video timing for Colossal Gigante (38ms per frame, 100% fluid)
       : isHechicero
       ? [70, 80, 85, 95, 100, 120, 480, 140, 120, 90, 75, 65] // Frame 7 (idx 6) peak halo & crystal cage hold
       : isNigromante
@@ -102,7 +109,7 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
     let timerId: any;
 
     const advance = () => {
-      const maxFrames = isCazador ? CAZADOR_FRAMES : isBestia ? BESTIA_FRAMES : isExplorador ? EXPLORADOR_FRAMES : TOTAL_FRAMES;
+      const maxFrames = isCazador ? CAZADOR_FRAMES : isBestia ? BESTIA_FRAMES : isExplorador ? EXPLORADOR_FRAMES : isGigante ? GIGANTE_FRAMES : TOTAL_FRAMES;
       if (cur < maxFrames - 1) {
         cur++;
         setFrameIndex(cur);
@@ -174,6 +181,20 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
     (sovereignPixel && sovereignPixel.x < toPixel.x) ||
     (fromPixel && fromPixel.x > toPixel.x);
 
+  // Dynamic 3-Move rotation per turn for Gigante (GI): 1 -> 2 -> 3 -> 1 -> 2 -> 3
+  const giganteVariation: 1 | 2 | 3 =
+    clash.variation ??
+    ((((Math.abs(Math.round(clash.toPixel.x * 7 + clash.toPixel.y * 13))) % 3) + 1) as 1 | 2 | 3);
+
+  const giganteSheet =
+    giganteVariation === 1 ? GIGANTE_VAR1_B64 :
+    giganteVariation === 2 ? GIGANTE_VAR2_B64 :
+    GIGANTE_VAR3_B64;
+
+  const giganteShouldFlip =
+    (sovereignPixel && sovereignPixel.x < toPixel.x) ||
+    (fromPixel && fromPixel.x > toPixel.x);
+
   return (
     <g key={clash.id} pointerEvents="none" className="select-none z-50">
       <defs>
@@ -203,10 +224,10 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
         </clipPath>
         <clipPath id="gigante-frame-clip">
           <rect
-            x={-GIGANTE_HALF_SIZE}
-            y={-GIGANTE_HALF_SIZE}
-            width={GIGANTE_RENDER_SIZE}
-            height={GIGANTE_RENDER_SIZE}
+            x={-GIGANTE_HALF_WIDTH}
+            y={-GIGANTE_HALF_HEIGHT - 25}
+            width={GIGANTE_RENDER_WIDTH}
+            height={GIGANTE_RENDER_HEIGHT + 50}
           />
         </clipPath>
         <clipPath id="hechicero-frame-clip">
@@ -448,49 +469,49 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
         </g>
       )}
 
-      {/* 6. Colossal Runic Obsidian War Hammer Slam for Gigante (GI) */}
+      {/* 6. Colossal Cyclops Titan for Gigante (GI) - 3 Dynamic Combat Moves */}
       {attackerType === 'GI' && (
         <g transform={`translate(${midX}, ${midY})`}>
-          {/* Luminous Golden Ground Shockwave Rings on Climax (Frames 6-7) - Centered at ground impact, zero dark shadows */}
-          {(frameIndex === 6 || frameIndex === 7) && (
+          {/* Luminous Golden Volcanic Ground Shockwave on Climax Impact (Frames 14-18) */}
+          {(frameIndex >= 14 && frameIndex <= 18) && (
             <g>
               <ellipse
                 cx="0"
-                cy="62"
-                rx={frameIndex === 6 ? 82 : 112}
-                ry={frameIndex === 6 ? 34 : 46}
+                cy="68"
+                rx={frameIndex === 15 ? 96 : 72}
+                ry={frameIndex === 15 ? 38 : 28}
                 fill="none"
                 stroke="#f59e0b"
-                strokeWidth={frameIndex === 6 ? '3.5' : '2'}
-                opacity={frameIndex === 6 ? 0.9 : 0.5}
+                strokeWidth={frameIndex === 15 ? '4' : '2.5'}
+                opacity={frameIndex === 15 ? 0.95 : 0.6}
                 filter="drop-shadow(0 0 16px rgba(245, 158, 11, 0.95))"
               />
               <circle
                 cx="0"
-                cy="62"
-                r={frameIndex === 6 ? 48 : 74}
+                cy="68"
+                r={frameIndex === 15 ? 56 : 38}
                 fill="none"
                 stroke="#fbbf24"
-                strokeWidth="2"
-                opacity={frameIndex === 6 ? 0.8 : 0.4}
+                strokeWidth="2.5"
+                opacity={frameIndex === 15 ? 0.85 : 0.45}
               />
             </g>
           )}
-          <g clipPath="url(#gigante-frame-clip)">
-            <image
-              href={GIGANTE_SPRITESHEET_B64}
-              xlinkHref={GIGANTE_SPRITESHEET_B64}
-              x={-GIGANTE_HALF_SIZE - frameIndex * GIGANTE_RENDER_SIZE}
-              y={-GIGANTE_HALF_SIZE}
-              width={GIGANTE_RENDER_SIZE * TOTAL_FRAMES}
-              height={GIGANTE_RENDER_SIZE}
-              style={{
-                opacity: 1,
-                imageRendering: 'auto',
-                filter:
-                  'drop-shadow(0 0 20px rgba(245, 158, 11, 0.95)) drop-shadow(0 0 42px rgba(217, 119, 6, 0.65)) contrast(1.18) brightness(1.15)',
-              }}
-            />
+          <g transform={giganteShouldFlip ? 'scale(-1, 1)' : undefined}>
+            <g clipPath="url(#gigante-frame-clip)">
+              <image
+                href={giganteSheet}
+                xlinkHref={giganteSheet}
+                x={-GIGANTE_HALF_WIDTH - frameIndex * GIGANTE_RENDER_WIDTH}
+                y={-GIGANTE_HALF_HEIGHT}
+                width={GIGANTE_RENDER_WIDTH * GIGANTE_FRAMES}
+                height={GIGANTE_RENDER_HEIGHT}
+                style={{
+                  opacity: 1,
+                  imageRendering: 'auto',
+                }}
+              />
+            </g>
           </g>
         </g>
       )}

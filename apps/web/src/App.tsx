@@ -54,6 +54,7 @@ export const App: React.FC = () => {
   const cazadorMoveCounter = useRef(0);
   const bestiaMoveCounter = useRef(0);
   const exploradorMoveCounter = useRef(0);
+  const giganteMoveCounter = useRef(0);
 
   const checkSovereignClash = (action: Action, prevState: GameState, nextState: GameState): ComicClashEvent | null => {
     if (action.type !== 'MovePiece' && action.type !== 'PlacePiece') return null;
@@ -76,6 +77,9 @@ export const App: React.FC = () => {
     } else if (actingPieceType === 'EX') {
       exploradorMoveCounter.current += 1;
       variation = (((exploradorMoveCounter.current - 1) % 3) + 1) as 1 | 2 | 3;
+    } else if (actingPieceType === 'GI') {
+      giganteMoveCounter.current += 1;
+      variation = (((giganteMoveCounter.current - 1) % 3) + 1) as 1 | 2 | 3;
     }
 
     const destPixel = hexToPixel(destCoord, HEX_SIZE);
