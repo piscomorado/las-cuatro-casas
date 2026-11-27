@@ -51,6 +51,7 @@ export const App: React.FC = () => {
   const [clashEvent, setClashEvent] = useState<ComicClashEvent | null>(null);
   const [comicAnimationsEnabled, setComicAnimationsEnabled] = useState(true);
   const [logoExpanded, setLogoExpanded] = useState(false);
+  const cazadorMoveCounter = useRef(0);
 
   const checkSovereignClash = (action: Action, prevState: GameState, nextState: GameState): ComicClashEvent | null => {
     if (action.type !== 'MovePiece' && action.type !== 'PlacePiece') return null;
@@ -60,6 +61,13 @@ export const App: React.FC = () => {
     let actingPieceType: PieceType = 'SO';
     if ('pieceId' in action && prevState.pieces[action.pieceId]) {
       actingPieceType = prevState.pieces[action.pieceId]!.type;
+    }
+
+    // Turn-by-turn rotation for Cazador 3 moves (1 -> 2 -> 3 -> 1 -> 2 -> 3)
+    let variation: 1 | 2 | 3 | undefined;
+    if (actingPieceType === 'CZ') {
+      cazadorMoveCounter.current += 1;
+      variation = (((cazadorMoveCounter.current - 1) % 3) + 1) as 1 | 2 | 3;
     }
 
     const destPixel = hexToPixel(destCoord, HEX_SIZE);
@@ -123,6 +131,7 @@ export const App: React.FC = () => {
             sovereignPixel: hexToPixel(soCoord, HEX_SIZE),
             siegeCount,
             moveDistance,
+            variation,
           };
         }
       }
@@ -140,6 +149,7 @@ export const App: React.FC = () => {
         fromPixel: ('from' in action && action.from) ? hexToPixel(action.from, HEX_SIZE) : undefined,
         toPixel: destPixel,
         moveDistance,
+        variation,
       };
     }
 

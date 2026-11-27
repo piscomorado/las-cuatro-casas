@@ -116,17 +116,10 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
   const midX = (toPixel.x + targetX) / 2;
   const midY = (toPixel.y + targetY) / 2;
 
-  // Dynamic 3-Move selection for Cazador (CZ)
-  const cazadorVariation: 1 | 2 | 3 = clash.variation ?? (
-    // Sovereign siege attack -> Move 3 (Shadow Drop Strike)
-    clash.sovereignPixel ? 3 :
-    // Long jump (distance >= 3) -> Move 2 (Whirlwind Cyclone)
-    (clash.moveDistance && clash.moveDistance >= 3) ? 2 :
-    // Short jump (distance <= 2) -> Move 1 (Aerial Cross-Slash)
-    (clash.moveDistance && clash.moveDistance <= 2) ? 1 :
-    // Alternating / deterministic cycle
-    (((Math.abs(Math.round(clash.toPixel.x + clash.toPixel.y))) % 3) + 1) as 1 | 2 | 3
-  );
+  // Dynamic 3-Move rotation per turn for Cazador (CZ): 1 -> 2 -> 3 -> 1 -> 2 -> 3
+  const cazadorVariation: 1 | 2 | 3 =
+    clash.variation ??
+    ((((Math.abs(Math.round(clash.toPixel.x * 7 + clash.toPixel.y * 13))) % 3) + 1) as 1 | 2 | 3);
 
   const cazadorSheet =
     cazadorVariation === 1 ? CAZADOR_VAR1_B64 :
