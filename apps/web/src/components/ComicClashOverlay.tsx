@@ -24,10 +24,9 @@ export interface ComicClashOverlayProps {
 }
 
 const TOTAL_FRAMES = 12;
-const CAZADOR_FRAMES = 24;
 const FRAME_RENDER_SIZE = 195; // Calibrated to reach halfway into surrounding adjacent hexes
 const HALF_SIZE = FRAME_RENDER_SIZE / 2;
-const CAZADOR_RENDER_SIZE = 168; // Calibrated to cover piece and halfway into surrounding adjacent hexes
+const CAZADOR_RENDER_SIZE = 285; // Titan-Hunter Runic Sapphire Javelin presence
 const CAZADOR_HALF_SIZE = CAZADOR_RENDER_SIZE / 2;
 const BESTIA_RENDER_SIZE = 250; // Amplified vertical presence for Bestia claw tear
 const BESTIA_HALF_SIZE = BESTIA_RENDER_SIZE / 2;
@@ -56,19 +55,14 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
     setVisible(true);
     setFrameIndex(0);
 
-    // Natural rhythm with dedicated slow-motion holds for each piece type:
+    // Natural 12-Frame Rhythm with dedicated slow-motion holds for Cazador (CZ), Bestia (BS), Gigante (GI), Hechicero (HE), and Nigromante (NI):
     const isCazador = clash.attackerType === 'CZ';
     const isBestia = clash.attackerType === 'BS';
     const isGigante = clash.attackerType === 'GI';
     const isHechicero = clash.attackerType === 'HE';
     const isNigromante = clash.attackerType === 'NI';
     const frameDurations = isCazador
-      ? [
-          40, 40, 40, 45, 45, 50, // 0-5: Anticipation, low crouch, weapon draw
-          35, 35, 35, 40, 45, 50, // 6-11: High-speed dash and dual X-slash
-          140, 120, 80, 60, 50, 45, // 12-17: Impact burst and shockwave
-          45, 45, 45, 50, 55, 60,  // 18-23: Flourish and sheathe
-        ]
+      ? [60, 70, 75, 80, 90, 100, 480, 160, 120, 90, 75, 65] // Frame 7 (idx 6) peak vertical star shockwave & planted javelin hold
       : isBestia
       ? [35, 40, 45, 50, 65, 140, 240, 320, 180, 85, 75, 65]
       : isGigante
@@ -82,11 +76,10 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
     let timerId: any;
 
     const advance = () => {
-      const maxFrames = isCazador ? CAZADOR_FRAMES : TOTAL_FRAMES;
-      if (cur < maxFrames - 1) {
+      if (cur < TOTAL_FRAMES - 1) {
         cur++;
         setFrameIndex(cur);
-        timerId = setTimeout(advance, frameDurations[cur] ?? 45);
+        timerId = setTimeout(advance, frameDurations[cur]);
       } else {
         timerId = setTimeout(() => {
           setVisible(false);
@@ -221,30 +214,32 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
         </g>
       )}
 
-      {/* 3. Dual-Blade Runic 24-Frame 2D Strike for Cazador (CZ) */}
+      {/* 3. Titan-Hunter Runic Sapphire Javelin Slam for Cazador (CZ) */}
       {attackerType === 'CZ' && (
         <g transform={`translate(${midX}, ${midY})`}>
-          {/* Sapphire & Gold Ground Impact Ring during Climax (Frames 12-16) - Scaled to 168px */}
-          {frameIndex >= 12 && frameIndex <= 16 && (
+          {/* Luminous Sapphire & Gold Ground Impact Ring during Climax (Frames 5-7) - Centered at exact javelin ground tip */}
+          {(frameIndex === 5 || frameIndex === 6 || frameIndex === 7) && (
             <g>
               <ellipse
                 cx="0"
-                cy="36"
-                rx={frameIndex === 13 ? 54 : 38}
-                ry={frameIndex === 13 ? 22 : 16}
+                cy="114"
+                rx={frameIndex === 6 ? 90 : 65}
+                ry={frameIndex === 6 ? 36 : 26}
                 fill="none"
                 stroke="#38bdf8"
-                strokeWidth={frameIndex === 13 ? '3' : '2'}
-                opacity={frameIndex === 13 ? 0.95 : 0.6}
+                strokeWidth={frameIndex === 6 ? '3.5' : '2'}
+                opacity={frameIndex === 6 ? 0.95 : 0.6}
+                filter="drop-shadow(0 0 16px rgba(56, 189, 248, 0.95))"
               />
               <circle
                 cx="0"
-                cy="36"
-                r={frameIndex === 13 ? 34 : 24}
+                cy="114"
+                r={frameIndex === 6 ? 58 : 42}
                 fill="none"
                 stroke="#fbbf24"
-                strokeWidth={frameIndex === 13 ? '2' : '1.5'}
-                opacity={frameIndex === 13 ? 0.85 : 0.5}
+                strokeWidth={frameIndex === 6 ? '2' : '1.5'}
+                opacity={frameIndex === 6 ? 0.85 : 0.5}
+                filter="drop-shadow(0 0 12px rgba(251, 191, 36, 0.9))"
               />
             </g>
           )}
@@ -254,11 +249,13 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
               xlinkHref={CAZADOR_SPRITESHEET_B64}
               x={-CAZADOR_HALF_SIZE - frameIndex * CAZADOR_RENDER_SIZE}
               y={-CAZADOR_HALF_SIZE}
-              width={CAZADOR_RENDER_SIZE * CAZADOR_FRAMES}
+              width={CAZADOR_RENDER_SIZE * TOTAL_FRAMES}
               height={CAZADOR_RENDER_SIZE}
               style={{
                 opacity: 1,
                 imageRendering: 'auto',
+                filter:
+                  'drop-shadow(0 0 20px rgba(56, 189, 248, 0.95)) drop-shadow(0 0 42px rgba(251, 191, 36, 0.7)) contrast(1.18) brightness(1.12)',
               }}
             />
           </g>
