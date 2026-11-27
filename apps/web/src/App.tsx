@@ -14,6 +14,8 @@ import {
   coordToKey,
   keyToCoord,
   PieceType,
+  CellKey,
+  AxialCoord,
 } from '@lcch/engine';
 import { HexBoard, LastMoveInfo } from './components/HexBoard';
 import { HandTray } from './components/HandTray';
@@ -62,7 +64,8 @@ export const App: React.FC = () => {
       action.type !== 'MovePiece' &&
       action.type !== 'PlacePiece' &&
       action.type !== 'ClimbStack' &&
-      action.type !== 'DescendStack'
+      action.type !== 'DescendStack' &&
+      action.type !== 'SwapPiece'
     ) {
       return null;
     }
@@ -109,13 +112,21 @@ export const App: React.FC = () => {
       undefined;
 
     // 2. Check if destCoord touches (is adjacent to) ANY ENEMY SOVEREIGN on the board
+    const touchedEnemySovereigns: Array<{
+      house: House;
+      cellKey: CellKey;
+      coord: AxialCoord;
+      pixel: { x: number; y: number };
+      siegeCount: number;
+    }> = [];
+
     for (const p of Object.values(nextState.pieces)) {
       if (
         p.type === 'SO' &&
         p.location === 'board' &&
         p.cellKey &&
-        p.house !== action.house && // Enemy Sovereign
-        nextState.aliveHouses.includes(p.house)
+        p.house !== action.house && // Enemy Sovereign of different color
+        prevState.aliveHouses.includes(p.house) // Was alive before this action
       ) {
         const soCoord = keyToCoord(p.cellKey);
         const isNeighbor = getNeighbors(soCoord).some((nb) => nb.q === destCoord.q && nb.r === destCoord.r);
@@ -130,40 +141,57 @@ export const App: React.FC = () => {
               siegeCount++;
             }
           }
-
-          // Sound tension progression based on siege count
-          if (siegeCount === 6) {
-            sounds.playHouseFell();
-          } else if (siegeCount === 5) {
-            sounds.playCriticalAlert();
-            if (actingPieceType === 'CZ') sounds.playSwordSlash();
-            else if (actingPieceType === 'EX') sounds.playWindCyclone();
-            else if (actingPieceType === 'BS') sounds.playBeastClaw();
-            else if (actingPieceType === 'GI') sounds.playGiantStomp();
-            else sounds.playSlide();
-          } else {
-            if (actingPieceType === 'CZ') sounds.playSwordSlash();
-            else if (actingPieceType === 'EX') sounds.playWindCyclone();
-            else if (actingPieceType === 'BS') sounds.playBeastClaw();
-            else if (actingPieceType === 'GI') sounds.playGiantStomp();
-            else sounds.playSlide();
-          }
-
-          return {
-            id: `${Date.now()}-${p.cellKey}`,
-            attackerType: actingPieceType,
-            attackerHouse: action.house,
-            targetHouse: p.house,
-            fromPixel: ('from' in action && action.from) ? hexToPixel(action.from, HEX_SIZE) : undefined,
-            toPixel: destPixel,
-            sovereignPixel: hexToPixel(soCoord, HEX_SIZE),
+          touchedEnemySovereigns.push({
+            house: p.house,
+            cellKey: p.cellKey,
+            coord: soCoord,
+            pixel: hexToPixel(soCoord, HEX_SIZE),
             siegeCount,
-            moveDistance,
-            variation,
-            stackAction,
-          };
+          });
         }
       }
+    }
+
+    if (touchedEnemySovereigns.length > 0) {
+      const maxSiege = Math.max(...touchedEnemySovereigns.map((s) => s.siegeCount));
+      if (maxSiege === 6) {
+        sounds.playHouseFell();
+      } else if (maxSiege === 5) {
+        sounds.playCriticalAlert();
+        if (actingPieceType === 'CZ') sounds.playSwordSlash();
+        else if (actingPieceType === 'EX') sounds.playWindCyclone();
+        else if (actingPieceType === 'BS') sounds.playBeastClaw();
+        else if (actingPieceType === 'GI') sounds.playGiantStomp();
+        else if (actingPieceType === 'HE') sounds.playMystic();
+        else sounds.playSlide();
+      } else {
+        if (actingPieceType === 'CZ') sounds.playSwordSlash();
+        else if (actingPieceType === 'EX') sounds.playWindCyclone();
+        else if (actingPieceType === 'BS') sounds.playBeastClaw();
+        else if (actingPieceType === 'GI') sounds.playGiantStomp();
+        else if (actingPieceType === 'HE') sounds.playMystic();
+        else sounds.playSlide();
+      }
+
+      const firstTarget = touchedEnemySovereigns[0];
+      return {
+        id: `${Date.now()}-${destCoord.q},${destCoord.r}`,
+        attackerType: actingPieceType,
+        attackerHouse: action.house,
+        targetHouse: firstTarget.house,
+        fromPixel: ('from' in action && action.from) ? hexToPixel(action.from, HEX_SIZE) : undefined,
+        toPixel: destPixel,
+        sovereignPixel: touchedEnemySovereigns.length === 1 ? firstTarget.pixel : undefined,
+        siegeCount: maxSiege,
+        moveDistance,
+        variation,
+        stackAction,
+        besiegedSovereigns: touchedEnemySovereigns.map((s) => ({
+          house: s.house,
+          cellKey: s.cellKey,
+          siegeCount: s.siegeCount,
+        })),
+      };
     }
 
     // 3. Dynamic combat/movement animation for specialized piece moves:

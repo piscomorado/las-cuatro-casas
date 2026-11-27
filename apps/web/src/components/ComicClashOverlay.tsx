@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { PieceType, House } from '@lcch/engine';
+import { PieceType, House, CellKey } from '@lcch/engine';
 import {
   CAZADOR_VAR1_B64,
   CAZADOR_VAR2_B64,
@@ -27,6 +27,12 @@ import {
 } from '../assets/vfx/hechicero_b64';
 import { NIGROMANTE_SPRITESHEET_B64 } from '../assets/vfx/nigromante_b64';
 
+export interface BesiegedSovereignInfo {
+  house: House;
+  cellKey: CellKey;
+  siegeCount: number;
+}
+
 export interface ComicClashEvent {
   id: string;
   attackerType: PieceType;
@@ -39,6 +45,7 @@ export interface ComicClashEvent {
   moveDistance?: number;
   variation?: 1 | 2 | 3;
   stackAction?: 'climb' | 'descend';
+  besiegedSovereigns?: BesiegedSovereignInfo[];
 }
 
 export interface ComicClashOverlayProps {

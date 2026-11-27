@@ -51,43 +51,90 @@ export const HexBoard: React.FC<HexBoardProps> = ({
     }
   }, [clashEvent?.id]);
 
-  // Sovereign Besieged Reaction Screen state (awakens on attack impact, holds for 10s, then smoothly returns to token)
-  const [activeSovereignReaction, setActiveSovereignReaction] = useState<{
-    cellKey: CellKey;
-    level: number;
-  } | null>(null);
-  const sovereignReactionTimerRef = useRef<{ start?: ReturnType<typeof setTimeout>; end?: ReturnType<typeof setTimeout> }>({});
+  // Sovereign Besieged Reaction Screen state (by cellKey -> siege level: supports simultaneous multiple sovereigns)
+  const [activeSovereignReactions, setActiveSovereignReactions] = useState<Record<CellKey, number>>({});
+  const sovereignReactionTimersRef = useRef<
+    Map<CellKey, { start?: ReturnType<typeof setTimeout>; end?: ReturnType<typeof setTimeout> }>
+  >(new Map());
 
   useEffect(() => {
-    if (clashEvent && clashEvent.targetHouse && comicAnimationsEnabled) {
-      const targetSov = Object.values(state.pieces).find(
-        (p) => p.type === 'SO' && p.house === clashEvent.targetHouse && p.location === 'board'
-      );
-      if (targetSov && targetSov.cellKey) {
-        if (sovereignReactionTimerRef.current.start) clearTimeout(sovereignReactionTimerRef.current.start);
-        if (sovereignReactionTimerRef.current.end) clearTimeout(sovereignReactionTimerRef.current.end);
+    // 1. Identify which enemy sovereigns were touched/invaded by the last action
+    const sovereignsToAwaken: Array<{ cellKey: CellKey; level: number }> = [];
 
-        const targetCell = targetSov.cellKey;
-        // 650ms delay: allows the attacking weapon animation to strike, then the Sovereign face awakens in reaction!
-        sovereignReactionTimerRef.current.start = setTimeout(() => {
-          setActiveSovereignReaction({
-            cellKey: targetCell,
-            level: clashEvent.siegeCount ?? 1,
-          });
-        }, 650);
+    if (clashEvent?.besiegedSovereigns && clashEvent.besiegedSovereigns.length > 0) {
+      for (const sov of clashEvent.besiegedSovereigns) {
+        sovereignsToAwaken.push({
+          cellKey: sov.cellKey,
+          level: sov.siegeCount,
+        });
+      }
+    } else if (lastMove?.action && 'to' in lastMove.action && lastMove.action.to) {
+      const destCoord = lastMove.action.to;
+      const actingHouse = lastMove.house;
 
-        // Stays visible for 10 seconds, then progressively dissolves over 1.8s (total 11.8s)
-        sovereignReactionTimerRef.current.end = setTimeout(() => {
-          setActiveSovereignReaction((prev) => (prev?.cellKey === targetCell ? null : prev));
-        }, 650 + 11800);
+      for (const p of Object.values(state.pieces)) {
+        if (
+          p.type === 'SO' &&
+          p.location === 'board' &&
+          p.cellKey &&
+          p.house !== actingHouse // Enemy sovereign touched by another color
+        ) {
+          const soCoord = keyToCoord(p.cellKey);
+          const isNeighbor = getNeighbors(soCoord).some(
+            (nb) => nb.q === destCoord.q && nb.r === destCoord.r
+          );
+          if (isNeighbor) {
+            const count = sovereignSiegeCounts.get(p.cellKey) ?? 1;
+            sovereignsToAwaken.push({
+              cellKey: p.cellKey,
+              level: count,
+            });
+          }
+        }
       }
     }
-  }, [clashEvent?.id]);
+
+    if (sovereignsToAwaken.length === 0) return;
+
+    // 650ms delay if there is a clash combat VFX, or 50ms immediate delay
+    const delay = (comicAnimationsEnabled && clashEvent) ? 650 : 50;
+
+    // Awaken ALL touched sovereigns with independent timers
+    for (const { cellKey, level } of sovereignsToAwaken) {
+      const existing = sovereignReactionTimersRef.current.get(cellKey);
+      if (existing?.start) clearTimeout(existing.start);
+      if (existing?.end) clearTimeout(existing.end);
+
+      const cellTimers: { start?: ReturnType<typeof setTimeout>; end?: ReturnType<typeof setTimeout> } = {};
+
+      cellTimers.start = setTimeout(() => {
+        setActiveSovereignReactions((prev) => ({
+          ...prev,
+          [cellKey]: level,
+        }));
+      }, delay);
+
+      // Stays visible for 10 seconds, then dissolves over 1.8s (total 11.8s)
+      cellTimers.end = setTimeout(() => {
+        setActiveSovereignReactions((prev) => {
+          const next = { ...prev };
+          delete next[cellKey];
+          return next;
+        });
+        sovereignReactionTimersRef.current.delete(cellKey);
+      }, delay + 11800);
+
+      sovereignReactionTimersRef.current.set(cellKey, cellTimers);
+    }
+  }, [clashEvent?.id, lastMove]);
 
   useEffect(() => {
     return () => {
-      if (sovereignReactionTimerRef.current.start) clearTimeout(sovereignReactionTimerRef.current.start);
-      if (sovereignReactionTimerRef.current.end) clearTimeout(sovereignReactionTimerRef.current.end);
+      for (const timers of sovereignReactionTimersRef.current.values()) {
+        if (timers.start) clearTimeout(timers.start);
+        if (timers.end) clearTimeout(timers.end);
+      }
+      sovereignReactionTimersRef.current.clear();
     };
   }, []);
 
@@ -299,8 +346,8 @@ export const HexBoard: React.FC<HexBoardProps> = ({
             const isLastOrigin = lastMove?.from ? (lastMove.from.q === coord.q && lastMove.from.r === coord.r) : false;
             const isLastTarget = lastMove?.to ? (lastMove.to.q === coord.q && lastMove.to.r === coord.r) : false;
             const siegeCount = sovereignSiegeCounts.get(cellKey);
-            const isSovereignReactionActive = activeSovereignReaction?.cellKey === cellKey;
-            const reactionLevel = isSovereignReactionActive ? activeSovereignReaction.level : undefined;
+            const reactionLevel = activeSovereignReactions[cellKey];
+            const isSovereignReactionActive = reactionLevel !== undefined;
 
             return (
               <BoardHex
