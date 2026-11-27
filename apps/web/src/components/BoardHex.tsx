@@ -2,7 +2,7 @@ import React from 'react';
 import { House, Piece } from '@lcch/engine';
 import { getHexCornerPoints, HEX_SIZE } from '../utils/hexMath';
 import { SvgPieceIcon } from './PieceIcon';
-import { SOVEREIGN_RED_PORTRAIT_B64 } from '../assets/vfx/sovereign_portraits_b64';
+import { SOVEREIGN_PORTRAITS, SOVEREIGN_THEMES } from '../assets/vfx/sovereign_portraits_b64';
 
 export interface BoardHexProps {
   q: number;
@@ -144,14 +144,16 @@ export const BoardHex: React.FC<BoardHexProps> = ({
 
           {/* Hex Body or Besieged Sovereign Screen */}
           {(() => {
-            const isSovereignActive = topPiece.type === 'SO' && isSovereignReactionActive;
-            const hasPortrait = topPiece.house === 'red' && Boolean(SOVEREIGN_RED_PORTRAIT_B64);
-            const showSovereignScreen = isSovereignActive && hasPortrait;
+            const isSovereign = topPiece.type === 'SO';
+            const showSovereignScreen = isSovereign && isSovereignReactionActive;
             const level = sovereignReactionLevel ?? siegeDangerCount ?? 1;
 
             if (showSovereignScreen) {
               const clipId = `sovereign-hex-clip-${q}-${r}`;
-              const moodColor = level >= 5 ? '#ef4444' : level >= 3 ? '#f59e0b' : '#ef4444';
+              const houseKey = topPiece.house as House;
+              const theme = SOVEREIGN_THEMES[houseKey] ?? SOVEREIGN_THEMES.red;
+              const portraitHref = SOVEREIGN_PORTRAITS[houseKey] ?? SOVEREIGN_PORTRAITS.red;
+              const moodColor = level >= 5 ? theme.primary : level >= 3 ? theme.accent : theme.primary;
 
               return (
                 <g className="sovereign-reaction-container">
@@ -162,13 +164,20 @@ export const BoardHex: React.FC<BoardHexProps> = ({
                   </defs>
 
                   {/* Inner Heartbeat Group: lub-dub pulse during active siege */}
-                  <g className="sovereign-heartbeat" style={{ transformOrigin: '0px 0px' }}>
+                  <g
+                    className="sovereign-heartbeat"
+                    style={{
+                      transformOrigin: '0px 0px',
+                      ['--sov-glow-color' as any]: theme.glow,
+                      ['--sov-accent-color' as any]: theme.accent,
+                    }}
+                  >
                     {/* Dark base viewport backdrop */}
                     <polygon points={hexPoints} fill="#050505" />
 
                     {/* Sovereign Face cropped inside the hexagonal screen */}
                     <image
-                      href={SOVEREIGN_RED_PORTRAIT_B64}
+                      href={portraitHref}
                       x={-46}
                       y={-46}
                       width={92}
@@ -179,9 +188,9 @@ export const BoardHex: React.FC<BoardHexProps> = ({
                       style={{
                         filter:
                           level >= 5
-                            ? 'contrast(1.38) brightness(1.24) drop-shadow(0 0 14px rgba(239, 68, 68, 0.95))'
+                            ? `contrast(1.38) brightness(1.24) drop-shadow(0 0 14px ${theme.glow})`
                             : level >= 3
-                            ? 'contrast(1.22) brightness(1.15) drop-shadow(0 0 8px rgba(245, 158, 11, 0.9))'
+                            ? `contrast(1.22) brightness(1.15) drop-shadow(0 0 8px ${theme.glow})`
                             : 'contrast(1.12) brightness(1.06)',
                       }}
                     />
@@ -212,7 +221,7 @@ export const BoardHex: React.FC<BoardHexProps> = ({
                   {/* Dramatic Strobe Flash at emergence */}
                   <polygon
                     points={hexPoints}
-                    fill={level >= 4 ? '#ffffff' : '#fef08a'}
+                    fill={level >= 4 ? '#ffffff' : theme.strobe}
                     className="sovereign-strobe-overlay"
                     pointerEvents="none"
                   />
