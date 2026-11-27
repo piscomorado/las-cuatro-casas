@@ -262,7 +262,7 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
                 opacity: 1,
                 imageRendering: 'auto',
                 filter:
-                  'drop-shadow(0 0 20px rgba(56, 189, 248, 0.95)) drop-shadow(0 0 42px rgba(251, 191, 36, 0.7)) contrast(1.18) brightness(1.12)',
+                  'drop-shadow(0 0 10px rgba(56, 189, 248, 0.95)) drop-shadow(0 0 20px rgba(56, 189, 248, 0.5)) contrast(1.15) brightness(1.08)',
               }}
             />
           </g>
