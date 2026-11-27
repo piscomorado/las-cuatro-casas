@@ -161,28 +161,53 @@ export const BoardHex: React.FC<BoardHexProps> = ({
                     </clipPath>
                   </defs>
 
-                  {/* Dark base viewport backdrop */}
-                  <polygon points={hexPoints} fill="#050505" />
+                  {/* Inner Heartbeat Group: lub-dub pulse during active siege */}
+                  <g className="sovereign-heartbeat" style={{ transformOrigin: '0px 0px' }}>
+                    {/* Dark base viewport backdrop */}
+                    <polygon points={hexPoints} fill="#050505" />
 
-                  {/* Sovereign Face cropped inside the hexagonal screen */}
-                  <image
-                    href={SOVEREIGN_RED_PORTRAIT_B64}
-                    x={-46}
-                    y={-46}
-                    width={92}
-                    height={92}
-                    preserveAspectRatio="xMidYMid slice"
-                    clipPath={`url(#${clipId})`}
-                    className={level >= 3 ? 'sovereign-screen-glow' : undefined}
-                    style={{
-                      filter:
-                        level >= 5
-                          ? 'contrast(1.38) brightness(1.24) drop-shadow(0 0 14px rgba(239, 68, 68, 0.95))'
-                          : level >= 3
-                          ? 'contrast(1.22) brightness(1.15) drop-shadow(0 0 8px rgba(245, 158, 11, 0.9))'
-                          : 'contrast(1.12) brightness(1.06)',
-                    }}
-                  />
+                    {/* Sovereign Face cropped inside the hexagonal screen */}
+                    <image
+                      href={SOVEREIGN_RED_PORTRAIT_B64}
+                      x={-46}
+                      y={-46}
+                      width={92}
+                      height={92}
+                      preserveAspectRatio="xMidYMid slice"
+                      clipPath={`url(#${clipId})`}
+                      className={level >= 3 ? 'sovereign-screen-glow' : undefined}
+                      style={{
+                        filter:
+                          level >= 5
+                            ? 'contrast(1.38) brightness(1.24) drop-shadow(0 0 14px rgba(239, 68, 68, 0.95))'
+                            : level >= 3
+                            ? 'contrast(1.22) brightness(1.15) drop-shadow(0 0 8px rgba(245, 158, 11, 0.9))'
+                            : 'contrast(1.12) brightness(1.06)',
+                      }}
+                    />
+
+                    {/* Hexagonal HUD energy border (clean, no numbers, no notices) */}
+                    <polygon
+                      points={hexPoints}
+                      fill="none"
+                      stroke={isSelected ? '#ffffff' : moodColor}
+                      strokeWidth={isSelected ? 4 : level >= 4 ? 3.5 : 2.5}
+                      strokeDasharray={level >= 4 ? '6 3' : undefined}
+                      className={level >= 3 ? 'animate-pulse' : undefined}
+                      style={{
+                        filter: `drop-shadow(0 0 ${level >= 5 ? 14 : 7}px ${moodColor})`,
+                      }}
+                    />
+
+                    {/* Dynamic Corner Sparks when under heavy stress */}
+                    {level >= 3 && (
+                      <g pointerEvents="none" className="animate-pulse">
+                        <circle cx="-32" cy="-20" r="2.5" fill={moodColor} filter={`drop-shadow(0 0 6px ${moodColor})`} />
+                        <circle cx="32" cy="-20" r="2.5" fill={moodColor} filter={`drop-shadow(0 0 6px ${moodColor})`} />
+                        <circle cx="0" cy="38" r="2.5" fill={moodColor} filter={`drop-shadow(0 0 6px ${moodColor})`} />
+                      </g>
+                    )}
+                  </g>
 
                   {/* Dramatic Strobe Flash at emergence */}
                   <polygon
@@ -191,28 +216,6 @@ export const BoardHex: React.FC<BoardHexProps> = ({
                     className="sovereign-strobe-overlay"
                     pointerEvents="none"
                   />
-
-                  {/* Hexagonal HUD energy border (clean, no numbers, no notices) */}
-                  <polygon
-                    points={hexPoints}
-                    fill="none"
-                    stroke={isSelected ? '#ffffff' : moodColor}
-                    strokeWidth={isSelected ? 4 : level >= 4 ? 3.5 : 2.5}
-                    strokeDasharray={level >= 4 ? '6 3' : undefined}
-                    className={level >= 3 ? 'animate-pulse' : undefined}
-                    style={{
-                      filter: `drop-shadow(0 0 ${level >= 5 ? 14 : 7}px ${moodColor})`,
-                    }}
-                  />
-
-                  {/* Dynamic Corner Sparks when under heavy stress */}
-                  {level >= 3 && (
-                    <g pointerEvents="none" className="animate-pulse">
-                      <circle cx="-32" cy="-20" r="2.5" fill={moodColor} filter={`drop-shadow(0 0 6px ${moodColor})`} />
-                      <circle cx="32" cy="-20" r="2.5" fill={moodColor} filter={`drop-shadow(0 0 6px ${moodColor})`} />
-                      <circle cx="0" cy="38" r="2.5" fill={moodColor} filter={`drop-shadow(0 0 6px ${moodColor})`} />
-                    </g>
-                  )}
                 </g>
               );
             }
