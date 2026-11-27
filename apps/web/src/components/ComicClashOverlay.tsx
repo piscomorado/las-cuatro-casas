@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { PieceType, House } from '@lcch/engine';
-import { CAZADOR_SPRITESHEET_B64 } from '../assets/vfx/cazador_b64';
+import {
+  CAZADOR_VAR1_B64,
+  CAZADOR_VAR2_B64,
+  CAZADOR_VAR3_B64,
+} from '../assets/vfx/cazador_b64';
 import { EXPLORADOR_SPRITESHEET_B64 } from '../assets/vfx/explorador_b64';
 import { BESTIA_SPRITESHEET_B64 } from '../assets/vfx/bestia_b64';
 import { GIGANTE_SPRITESHEET_B64 } from '../assets/vfx/gigante_b64';
@@ -16,6 +20,8 @@ export interface ComicClashEvent {
   toPixel: { x: number; y: number };
   sovereignPixel?: { x: number; y: number };
   siegeCount?: number;
+  moveDistance?: number;
+  variation?: 1 | 2 | 3;
 }
 
 export interface ComicClashOverlayProps {
@@ -24,12 +30,14 @@ export interface ComicClashOverlayProps {
 }
 
 const TOTAL_FRAMES = 12;
-const CAZADOR_FRAMES = 10;
+const CAZADOR_FRAMES = 18;
 const BESTIA_FRAMES = 9;
 const FRAME_RENDER_SIZE = 195; // Calibrated to reach halfway into surrounding adjacent hexes
 const HALF_SIZE = FRAME_RENDER_SIZE / 2;
-const CAZADOR_RENDER_SIZE = 168; // Calibrated to cover piece and halfway into surrounding adjacent hexes
-const CAZADOR_HALF_SIZE = CAZADOR_RENDER_SIZE / 2;
+const CAZADOR_RENDER_WIDTH = 298; // Calibrated 16:9 ratio covering piece and reaching into adjacent hexes
+const CAZADOR_RENDER_HEIGHT = 168; // Calibrated height to cover piece and reach halfway into surrounding adjacent hexes
+const CAZADOR_HALF_WIDTH = CAZADOR_RENDER_WIDTH / 2;
+const CAZADOR_HALF_HEIGHT = CAZADOR_RENDER_HEIGHT / 2;
 const BESTIA_RENDER_SIZE = 168; // Calibrated to cover piece and halfway into surrounding adjacent hexes
 const BESTIA_HALF_SIZE = BESTIA_RENDER_SIZE / 2;
 const GIGANTE_RENDER_SIZE = 285; // Colossal Runic Obsidian War Hammer presence
@@ -64,7 +72,7 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
     const isHechicero = clash.attackerType === 'HE';
     const isNigromante = clash.attackerType === 'NI';
     const frameDurations = isCazador
-      ? [50, 50, 60, 50, 50, 360, 180, 120, 90, 80] // Frame 6 (idx 5) is the downward X-slash ground impact with dramatic 360ms slow-mo hold!
+      ? [50, 50, 50, 55, 55, 55, 55, 60, 65, 70, 260, 140, 80, 70, 60, 55, 50, 50] // Frame 11 (idx 10) is the climax strike/slam impact with dramatic 260ms slow-mo hold!
       : isBestia
       ? [70, 70, 80, 70, 280, 280, 140, 110, 90] // Smooth kinetic easing: Frame 5 aerial hold + Frame 6 slash impact hold
       : isGigante
@@ -108,15 +116,36 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
   const midX = (toPixel.x + targetX) / 2;
   const midY = (toPixel.y + targetY) / 2;
 
+  // Dynamic 3-Move selection for Cazador (CZ)
+  const cazadorVariation: 1 | 2 | 3 = clash.variation ?? (
+    // Sovereign siege attack -> Move 3 (Shadow Drop Strike)
+    clash.sovereignPixel ? 3 :
+    // Long jump (distance >= 3) -> Move 2 (Whirlwind Cyclone)
+    (clash.moveDistance && clash.moveDistance >= 3) ? 2 :
+    // Short jump (distance <= 2) -> Move 1 (Aerial Cross-Slash)
+    (clash.moveDistance && clash.moveDistance <= 2) ? 1 :
+    // Alternating / deterministic cycle
+    (((Math.abs(Math.round(clash.toPixel.x + clash.toPixel.y))) % 3) + 1) as 1 | 2 | 3
+  );
+
+  const cazadorSheet =
+    cazadorVariation === 1 ? CAZADOR_VAR1_B64 :
+    cazadorVariation === 2 ? CAZADOR_VAR2_B64 :
+    CAZADOR_VAR3_B64;
+
+  const cazadorShouldFlip =
+    (sovereignPixel && sovereignPixel.x < toPixel.x) ||
+    (fromPixel && fromPixel.x > toPixel.x);
+
   return (
     <g key={clash.id} pointerEvents="none" className="select-none z-50">
       <defs>
         <clipPath id="cazador-frame-clip">
           <rect
-            x={-CAZADOR_HALF_SIZE}
-            y={-CAZADOR_HALF_SIZE}
-            width={CAZADOR_RENDER_SIZE}
-            height={CAZADOR_RENDER_SIZE}
+            x={-CAZADOR_HALF_WIDTH}
+            y={-CAZADOR_HALF_HEIGHT}
+            width={CAZADOR_RENDER_WIDTH}
+            height={CAZADOR_RENDER_HEIGHT}
           />
         </clipPath>
         <clipPath id="explorador-frame-clip">
@@ -243,46 +272,48 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
         </g>
       )}
 
-      {/* 3. 2D Action Assassin Strike for Cazador (CZ) */}
+      {/* 3. 2D Action Assassin Strike for Cazador (CZ) - 3 Dynamic Combat Moves */}
       {attackerType === 'CZ' && (
         <g transform={`translate(${midX}, ${midY})`}>
-          {/* Luminous Sapphire & Gold Ground Shockwave on Figura 6 Climax Slam (Frames 5-6) */}
-          {(frameIndex === 5 || frameIndex === 6) && (
+          {/* Luminous Sapphire & Gold Ground Shockwave on Climax Impact (Frames 10-11) */}
+          {(frameIndex === 10 || frameIndex === 11) && (
             <g>
               <ellipse
                 cx="0"
-                cy="48"
-                rx={frameIndex === 5 ? 58 : 42}
-                ry={frameIndex === 5 ? 22 : 16}
+                cy="54"
+                rx={frameIndex === 10 ? 64 : 46}
+                ry={frameIndex === 10 ? 24 : 18}
                 fill="none"
                 stroke="#38bdf8"
-                strokeWidth={frameIndex === 5 ? '3.5' : '2'}
-                opacity={frameIndex === 5 ? 0.95 : 0.6}
+                strokeWidth={frameIndex === 10 ? '3.5' : '2'}
+                opacity={frameIndex === 10 ? 0.95 : 0.6}
               />
               <circle
                 cx="0"
-                cy="48"
-                r={frameIndex === 5 ? 34 : 24}
+                cy="54"
+                r={frameIndex === 10 ? 38 : 26}
                 fill="none"
                 stroke="#fbbf24"
-                strokeWidth={frameIndex === 5 ? '2.5' : '1.5'}
-                opacity={frameIndex === 5 ? 0.9 : 0.5}
+                strokeWidth={frameIndex === 10 ? '2.5' : '1.5'}
+                opacity={frameIndex === 10 ? 0.9 : 0.5}
               />
             </g>
           )}
-          <g clipPath="url(#cazador-frame-clip)">
-            <image
-              href={CAZADOR_SPRITESHEET_B64}
-              xlinkHref={CAZADOR_SPRITESHEET_B64}
-              x={-CAZADOR_HALF_SIZE - frameIndex * CAZADOR_RENDER_SIZE}
-              y={-CAZADOR_HALF_SIZE}
-              width={CAZADOR_RENDER_SIZE * CAZADOR_FRAMES}
-              height={CAZADOR_RENDER_SIZE}
-              style={{
-                opacity: 1,
-                imageRendering: 'auto',
-              }}
-            />
+          <g transform={cazadorShouldFlip ? 'scale(-1, 1)' : undefined}>
+            <g clipPath="url(#cazador-frame-clip)">
+              <image
+                href={cazadorSheet}
+                xlinkHref={cazadorSheet}
+                x={-CAZADOR_HALF_WIDTH - frameIndex * CAZADOR_RENDER_WIDTH}
+                y={-CAZADOR_HALF_HEIGHT}
+                width={CAZADOR_RENDER_WIDTH * CAZADOR_FRAMES}
+                height={CAZADOR_RENDER_HEIGHT}
+                style={{
+                  opacity: 1,
+                  imageRendering: 'auto',
+                }}
+              />
+            </g>
           </g>
         </g>
       )}

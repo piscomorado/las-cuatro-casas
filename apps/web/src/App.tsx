@@ -63,6 +63,14 @@ export const App: React.FC = () => {
     }
 
     const destPixel = hexToPixel(destCoord, HEX_SIZE);
+    let moveDistance: number | undefined;
+    if ('from' in action && action.from && action.to) {
+      moveDistance = Math.max(
+        Math.abs(action.from.q - action.to.q),
+        Math.abs(action.from.r - action.to.r),
+        Math.abs((-action.from.q - action.from.r) - (-action.to.q - action.to.r))
+      );
+    }
 
     // 2. Check if destCoord touches (is adjacent to) ANY ENEMY SOVEREIGN on the board
     for (const p of Object.values(nextState.pieces)) {
@@ -114,9 +122,25 @@ export const App: React.FC = () => {
             toPixel: destPixel,
             sovereignPixel: hexToPixel(soCoord, HEX_SIZE),
             siegeCount,
+            moveDistance,
           };
         }
       }
+    }
+
+    // 3. If not adjacent to enemy Sovereign, but it's a Cazador (CZ) or Bestia (BS) leap move, trigger dynamic combat animation!
+    if (action.type === 'MovePiece' && (action.moveKind === 'cz' || action.moveKind === 'bs')) {
+      if (actingPieceType === 'CZ') sounds.playSwordSlash();
+      else if (actingPieceType === 'BS') sounds.playBeastClaw();
+
+      return {
+        id: `${Date.now()}-${destCoord.q},${destCoord.r}`,
+        attackerType: actingPieceType,
+        attackerHouse: action.house,
+        fromPixel: ('from' in action && action.from) ? hexToPixel(action.from, HEX_SIZE) : undefined,
+        toPixel: destPixel,
+        moveDistance,
+      };
     }
 
     return null;
