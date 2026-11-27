@@ -151,9 +151,7 @@ export const BoardHex: React.FC<BoardHexProps> = ({
 
             if (showSovereignScreen) {
               const clipId = `sovereign-hex-clip-${q}-${r}`;
-              const moodLabel = level >= 5 ? 'FRENESÍ' : level >= 3 ? 'FURIA' : 'ALERTA';
               const moodColor = level >= 5 ? '#ef4444' : level >= 3 ? '#f59e0b' : '#ef4444';
-              const moodBg = level >= 5 ? '#7f1d1d' : level >= 3 ? '#78350f' : '#450a0a';
 
               return (
                 <g className="sovereign-reaction-container">
@@ -194,7 +192,7 @@ export const BoardHex: React.FC<BoardHexProps> = ({
                     pointerEvents="none"
                   />
 
-                  {/* Hexagonal HUD energy border (clean, no numbers) */}
+                  {/* Hexagonal HUD energy border (clean, no numbers, no notices) */}
                   <polygon
                     points={hexPoints}
                     fill="none"
@@ -215,34 +213,6 @@ export const BoardHex: React.FC<BoardHexProps> = ({
                       <circle cx="0" cy="38" r="2.5" fill={moodColor} filter={`drop-shadow(0 0 6px ${moodColor})`} />
                     </g>
                   )}
-
-                  {/* Stylized Emotional State Badge (Pulp combat status without numbers) */}
-                  <g transform="translate(0, -28)" pointerEvents="none">
-                    <rect
-                      x="-24"
-                      y="-8"
-                      width="48"
-                      height="16"
-                      rx="4"
-                      fill={moodBg}
-                      stroke={moodColor}
-                      strokeWidth="1.2"
-                      style={{
-                        filter: `drop-shadow(0 0 ${level >= 4 ? 8 : 4}px ${moodColor})`,
-                      }}
-                    />
-                    <text
-                      x="0"
-                      y="3.5"
-                      textAnchor="middle"
-                      fontSize="8"
-                      fontWeight="900"
-                      letterSpacing="1.2"
-                      fill="#ffffff"
-                    >
-                      {moodLabel}
-                    </text>
-                  </g>
                 </g>
               );
             }
