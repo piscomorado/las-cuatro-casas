@@ -6,7 +6,11 @@ import {
   CAZADOR_VAR3_B64,
 } from '../assets/vfx/cazador_b64';
 import { EXPLORADOR_SPRITESHEET_B64 } from '../assets/vfx/explorador_b64';
-import { BESTIA_SPRITESHEET_B64 } from '../assets/vfx/bestia_b64';
+import {
+  BESTIA_VAR1_B64,
+  BESTIA_VAR2_B64,
+  BESTIA_VAR3_B64,
+} from '../assets/vfx/bestia_b64';
 import { GIGANTE_SPRITESHEET_B64 } from '../assets/vfx/gigante_b64';
 import { HECHICERO_SPRITESHEET_B64 } from '../assets/vfx/hechicero_b64';
 import { NIGROMANTE_SPRITESHEET_B64 } from '../assets/vfx/nigromante_b64';
@@ -31,15 +35,17 @@ export interface ComicClashOverlayProps {
 
 const TOTAL_FRAMES = 12;
 const CAZADOR_FRAMES = 30;
-const BESTIA_FRAMES = 9;
+const BESTIA_FRAMES = 30;
 const FRAME_RENDER_SIZE = 195; // Calibrated to reach halfway into surrounding adjacent hexes
 const HALF_SIZE = FRAME_RENDER_SIZE / 2;
 const CAZADOR_RENDER_WIDTH = 298; // Calibrated 16:9 ratio covering piece and reaching into adjacent hexes
 const CAZADOR_RENDER_HEIGHT = 168; // Calibrated height to cover piece and reach halfway into surrounding adjacent hexes
 const CAZADOR_HALF_WIDTH = CAZADOR_RENDER_WIDTH / 2;
 const CAZADOR_HALF_HEIGHT = CAZADOR_RENDER_HEIGHT / 2;
-const BESTIA_RENDER_SIZE = 168; // Calibrated to cover piece and halfway into surrounding adjacent hexes
-const BESTIA_HALF_SIZE = BESTIA_RENDER_SIZE / 2;
+const BESTIA_RENDER_WIDTH = 298; // Calibrated 16:9 ratio covering piece and reaching into adjacent hexes
+const BESTIA_RENDER_HEIGHT = 168; // Calibrated height to cover piece and reach halfway into surrounding adjacent hexes
+const BESTIA_HALF_WIDTH = BESTIA_RENDER_WIDTH / 2;
+const BESTIA_HALF_HEIGHT = BESTIA_RENDER_HEIGHT / 2;
 const GIGANTE_RENDER_SIZE = 285; // Colossal Runic Obsidian War Hammer presence
 const GIGANTE_HALF_SIZE = GIGANTE_RENDER_SIZE / 2;
 const HECHICERO_RENDER_SIZE = 275; // Astral Mirror & Runic Prism Cage presence
@@ -74,7 +80,7 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
     const frameDurations = isCazador
       ? Array(30).fill(38) // Silky-smooth 26fps continuous video timing (38ms per frame, 100% fluid with zero mid-motion stutter)
       : isBestia
-      ? [70, 70, 80, 70, 280, 280, 140, 110, 90] // Smooth kinetic easing: Frame 5 aerial hold + Frame 6 slash impact hold
+      ? Array(30).fill(38) // Silky-smooth 26fps continuous video timing for Bestia (38ms per frame, 100% fluid)
       : isGigante
       ? [100, 120, 130, 100, 90, 120, 340, 260, 160, 100, 80, 70]
       : isHechicero
@@ -130,6 +136,20 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
     (sovereignPixel && sovereignPixel.x < toPixel.x) ||
     (fromPixel && fromPixel.x > toPixel.x);
 
+  // Dynamic 3-Move rotation per turn for Bestia (BS): 1 -> 2 -> 3 -> 1 -> 2 -> 3
+  const bestiaVariation: 1 | 2 | 3 =
+    clash.variation ??
+    ((((Math.abs(Math.round(clash.toPixel.x * 7 + clash.toPixel.y * 13))) % 3) + 1) as 1 | 2 | 3);
+
+  const bestiaSheet =
+    bestiaVariation === 1 ? BESTIA_VAR1_B64 :
+    bestiaVariation === 2 ? BESTIA_VAR2_B64 :
+    BESTIA_VAR3_B64;
+
+  const bestiaShouldFlip =
+    (sovereignPixel && sovereignPixel.x < toPixel.x) ||
+    (fromPixel && fromPixel.x > toPixel.x);
+
   return (
     <g key={clash.id} pointerEvents="none" className="select-none z-50">
       <defs>
@@ -151,10 +171,10 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
         </clipPath>
         <clipPath id="bestia-frame-clip">
           <rect
-            x={-BESTIA_HALF_SIZE}
-            y={-BESTIA_HALF_SIZE}
-            width={BESTIA_RENDER_SIZE}
-            height={BESTIA_RENDER_SIZE}
+            x={-BESTIA_HALF_WIDTH}
+            y={-BESTIA_HALF_HEIGHT - 20}
+            width={BESTIA_RENDER_WIDTH}
+            height={BESTIA_RENDER_HEIGHT + 40}
           />
         </clipPath>
         <clipPath id="gigante-frame-clip">
@@ -197,7 +217,7 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
           opacity={frameIndex === 0 ? 0.85 : 0.45}
         />
       )}
-      {attackerType === 'BS' && fromPixel && frameIndex < 5 && (
+      {attackerType === 'BS' && fromPixel && frameIndex < 8 && (
         <g>
           <line
             x1={fromPixel.x}
@@ -332,46 +352,48 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
         </g>
       )}
 
-      {/* 5. 2D Action Predatory Beast Strike for Bestia Saltadora (BS) */}
+      {/* 5. 2D Action Predatory Beast Strike for Bestia Saltadora (BS) - 3 Dynamic Combat Moves */}
       {attackerType === 'BS' && (
         <g transform={`translate(${midX}, ${midY})`}>
-          {/* Luminous Crimson & Gold Ground Shockwave on Climax Slam (Frames 5-6) */}
-          {(frameIndex === 4 || frameIndex === 5) && (
+          {/* Luminous Crimson & Gold Ground Shockwave on Climax Impact (Frames 15-19) */}
+          {(frameIndex >= 15 && frameIndex <= 19) && (
             <g>
               <ellipse
                 cx="0"
                 cy="52"
-                rx={frameIndex === 5 ? 56 : 38}
-                ry={frameIndex === 5 ? 20 : 14}
+                rx={frameIndex === 16 ? 64 : 46}
+                ry={frameIndex === 16 ? 24 : 18}
                 fill="none"
                 stroke="#ef4444"
-                strokeWidth={frameIndex === 5 ? '3' : '2'}
-                opacity={frameIndex === 5 ? 0.95 : 0.6}
+                strokeWidth={frameIndex === 16 ? '3.5' : '2'}
+                opacity={frameIndex === 16 ? 0.95 : 0.6}
               />
               <circle
                 cx="0"
                 cy="52"
-                r={frameIndex === 5 ? 32 : 22}
+                r={frameIndex === 16 ? 38 : 26}
                 fill="none"
                 stroke="#f59e0b"
-                strokeWidth={frameIndex === 5 ? '2' : '1.5'}
-                opacity={frameIndex === 5 ? 0.85 : 0.5}
+                strokeWidth={frameIndex === 16 ? '2.5' : '1.5'}
+                opacity={frameIndex === 16 ? 0.85 : 0.5}
               />
             </g>
           )}
-          <g clipPath="url(#bestia-frame-clip)">
-            <image
-              href={BESTIA_SPRITESHEET_B64}
-              xlinkHref={BESTIA_SPRITESHEET_B64}
-              x={-BESTIA_HALF_SIZE - frameIndex * BESTIA_RENDER_SIZE}
-              y={-BESTIA_HALF_SIZE}
-              width={BESTIA_RENDER_SIZE * BESTIA_FRAMES}
-              height={BESTIA_RENDER_SIZE}
-              style={{
-                opacity: 1,
-                imageRendering: 'auto',
-              }}
-            />
+          <g transform={bestiaShouldFlip ? 'scale(-1, 1)' : undefined}>
+            <g clipPath="url(#bestia-frame-clip)">
+              <image
+                href={bestiaSheet}
+                xlinkHref={bestiaSheet}
+                x={-BESTIA_HALF_WIDTH - frameIndex * BESTIA_RENDER_WIDTH}
+                y={-BESTIA_HALF_HEIGHT}
+                width={BESTIA_RENDER_WIDTH * BESTIA_FRAMES}
+                height={BESTIA_RENDER_HEIGHT}
+                style={{
+                  opacity: 1,
+                  imageRendering: 'auto',
+                }}
+              />
+            </g>
           </g>
         </g>
       )}

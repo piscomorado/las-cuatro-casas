@@ -52,6 +52,7 @@ export const App: React.FC = () => {
   const [comicAnimationsEnabled, setComicAnimationsEnabled] = useState(true);
   const [logoExpanded, setLogoExpanded] = useState(false);
   const cazadorMoveCounter = useRef(0);
+  const bestiaMoveCounter = useRef(0);
 
   const checkSovereignClash = (action: Action, prevState: GameState, nextState: GameState): ComicClashEvent | null => {
     if (action.type !== 'MovePiece' && action.type !== 'PlacePiece') return null;
@@ -68,6 +69,9 @@ export const App: React.FC = () => {
     if (actingPieceType === 'CZ') {
       cazadorMoveCounter.current += 1;
       variation = (((cazadorMoveCounter.current - 1) % 3) + 1) as 1 | 2 | 3;
+    } else if (actingPieceType === 'BS') {
+      bestiaMoveCounter.current += 1;
+      variation = (((bestiaMoveCounter.current - 1) % 3) + 1) as 1 | 2 | 3;
     }
 
     const destPixel = hexToPixel(destCoord, HEX_SIZE);
