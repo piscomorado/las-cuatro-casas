@@ -159,68 +159,75 @@ export const BoardHex: React.FC<BoardHexProps> = ({
 
             return (
               <>
-                {/* 1. Base Piece: Always rendered underneath so when the sovereign screen dissolves, the standard piece is immediately and seamlessly revealed */}
-                <polygon
-                  points={hexPoints}
-                  fill={theme.fill}
-                  stroke={isSelected ? '#ffffff' : theme.stroke}
-                  strokeWidth={isSelected ? 3.5 : 2}
-                />
-                {isSelected && (
+                {/* 1. Base Piece: Wrapped in sovereign-idle-pulse if isSovereign so it has a continuous regal zoom-in / zoom-out breathing motion */}
+                <g
+                  className={isSovereign ? 'sovereign-idle-pulse' : undefined}
+                  style={isSovereign ? { transformOrigin: '0px 0px' } : undefined}
+                >
                   <polygon
                     points={hexPoints}
-                    fill="none"
-                    stroke="#ffffff"
-                    strokeWidth="5"
-                    strokeOpacity="0.4"
+                    fill={theme.fill}
+                    stroke={isSelected ? '#ffffff' : theme.stroke}
+                    strokeWidth={isSelected ? 3.5 : 2}
                   />
-                )}
-
-                {/* Last move target border highlight */}
-                {isLastMoveTarget && !isSelected && (
-                  <polygon
-                    points={hexPoints}
-                    fill="none"
-                    stroke="#fbbf24"
-                    strokeWidth="2.5"
-                    strokeDasharray="5 3"
-                    className="opacity-90 animate-pulse"
-                  />
-                )}
-
-                {/* Sovereign Siege Threat Ring (clean, no numbers) */}
-                {siegeDangerCount && siegeDangerCount >= 4 && !showSovereignScreen && (
-                  <g pointerEvents="none">
+                  {isSelected && (
                     <polygon
                       points={hexPoints}
                       fill="none"
-                      stroke={siegeDangerCount === 5 ? '#ef4444' : '#f59e0b'}
-                      strokeWidth={siegeDangerCount === 5 ? 4 : 2.5}
-                      className={siegeDangerCount === 5 ? 'animate-pulse' : undefined}
-                      strokeDasharray={siegeDangerCount === 5 ? '6 3' : '4 2'}
+                      stroke="#ffffff"
+                      strokeWidth="5"
+                      strokeOpacity="0.4"
                     />
-                  </g>
-                )}
+                  )}
 
-                {/* Official Emblem Image from manual v0.4 (Embedded Base64) */}
-                <SvgPieceIcon
-                  type={topPiece.type}
-                  x={-20}
-                  y={-20}
-                  size={40}
-                  white={true}
-                />
+                  {/* Last move target border highlight */}
+                  {isLastMoveTarget && !isSelected && (
+                    <polygon
+                      points={hexPoints}
+                      fill="none"
+                      stroke="#fbbf24"
+                      strokeWidth="2.5"
+                      strokeDasharray="5 3"
+                      className="opacity-90 animate-pulse"
+                    />
+                  )}
 
-                {/* 2. Besieged Sovereign Hexagonal Screen Overlay (Emerges on siege clash, stays for 10s, then dissolves smoothly back to the base piece) */}
+                  {/* Sovereign Siege Threat Ring (clean, no numbers) */}
+                  {siegeDangerCount && siegeDangerCount >= 4 && !showSovereignScreen && (
+                    <g pointerEvents="none">
+                      <polygon
+                        points={hexPoints}
+                        fill="none"
+                        stroke={siegeDangerCount === 5 ? '#ef4444' : '#f59e0b'}
+                        strokeWidth={siegeDangerCount === 5 ? 4 : 2.5}
+                        className={siegeDangerCount === 5 ? 'animate-pulse' : undefined}
+                        strokeDasharray={siegeDangerCount === 5 ? '6 3' : '4 2'}
+                      />
+                    </g>
+                  )}
+
+                  {/* Official Emblem Image from manual v0.4 (Embedded Base64) */}
+                  <SvgPieceIcon
+                    type={topPiece.type}
+                    x={-20}
+                    y={-20}
+                    size={40}
+                    white={true}
+                  />
+                </g>
+
+                {/* 2. Besieged Sovereign Hexagonal Screen Overlay (Emerges on siege clash with explosive zoom punch, stays for 10s with heartbeat, then dissolves smoothly) */}
                 {showSovereignScreen && (
-                  <g className="sovereign-reaction-container">
+                  <g className="sovereign-reaction-container" style={{ transformOrigin: '0px 0px' }}>
                     <defs>
                       <clipPath id={clipId}>
                         <polygon points={hexPoints} />
                       </clipPath>
                     </defs>
 
-                    {/* Inner Heartbeat Group: lub-dub pulse accelerating with siege level */}
+                    {/* Explosive Zoom-In / Zoom-Out Punch upon Emergence */}
+                    <g className="sovereign-zoom-punch" style={{ transformOrigin: '0px 0px' }}>
+                      {/* Inner Heartbeat Group: lub-dub pulse accelerating with siege level */}
                     <g
                       className="sovereign-heartbeat"
                       style={{
@@ -276,13 +283,14 @@ export const BoardHex: React.FC<BoardHexProps> = ({
                       )}
                     </g>
 
-                    {/* Dramatic Strobe Flash at emergence */}
-                    <polygon
-                      points={hexPoints}
-                      fill={level >= 4 ? '#ffffff' : sovTheme.strobe}
-                      className="sovereign-strobe-overlay"
-                      pointerEvents="none"
-                    />
+                      {/* Dramatic Strobe Flash at emergence */}
+                      <polygon
+                        points={hexPoints}
+                        fill={level >= 4 ? '#ffffff' : sovTheme.strobe}
+                        className="sovereign-strobe-overlay"
+                        pointerEvents="none"
+                      />
+                    </g>
                   </g>
                 )}
               </>
