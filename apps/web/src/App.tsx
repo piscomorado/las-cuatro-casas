@@ -57,7 +57,14 @@ export const App: React.FC = () => {
   const giganteMoveCounter = useRef(0);
 
   const checkSovereignClash = (action: Action, prevState: GameState, nextState: GameState): ComicClashEvent | null => {
-    if (action.type !== 'MovePiece' && action.type !== 'PlacePiece') return null;
+    if (
+      action.type !== 'MovePiece' &&
+      action.type !== 'PlacePiece' &&
+      action.type !== 'ClimbStack' &&
+      action.type !== 'DescendStack'
+    ) {
+      return null;
+    }
     if (!('to' in action) || !action.to) return null;
 
     const destCoord = action.to;
@@ -91,6 +98,11 @@ export const App: React.FC = () => {
         Math.abs((-action.from.q - action.from.r) - (-action.to.q - action.to.r))
       );
     }
+
+    const stackAction =
+      action.type === 'ClimbStack' ? 'climb' :
+      action.type === 'DescendStack' ? 'descend' :
+      undefined;
 
     // 2. Check if destCoord touches (is adjacent to) ANY ENEMY SOVEREIGN on the board
     for (const p of Object.values(nextState.pieces)) {
@@ -144,15 +156,27 @@ export const App: React.FC = () => {
             siegeCount,
             moveDistance,
             variation,
+            stackAction,
           };
         }
       }
     }
 
-    // 3. If not adjacent to enemy Sovereign, but it's a Cazador (CZ) or Bestia (BS) leap move, trigger dynamic combat animation!
-    if (action.type === 'MovePiece' && (action.moveKind === 'cz' || action.moveKind === 'bs')) {
+    // 3. Dynamic combat/movement animation for specialized piece moves:
+    // - Cazador leap move (CZ)
+    // - Bestia jump move (BS)
+    // - Gigante (GI): climbing onto a stack (ClimbStack), descending (DescendStack), or moving (MovePiece)
+    // - Explorador (EX): rapid scout glide (MovePiece)
+    const isSpecializedMove =
+      (action.type === 'MovePiece' && (action.moveKind === 'cz' || action.moveKind === 'bs')) ||
+      (actingPieceType === 'GI' && (action.type === 'ClimbStack' || action.type === 'DescendStack' || action.type === 'MovePiece')) ||
+      (actingPieceType === 'EX' && action.type === 'MovePiece');
+
+    if (isSpecializedMove) {
       if (actingPieceType === 'CZ') sounds.playSwordSlash();
       else if (actingPieceType === 'BS') sounds.playBeastClaw();
+      else if (actingPieceType === 'EX') sounds.playWindCyclone();
+      else if (actingPieceType === 'GI') sounds.playGiantStomp();
 
       return {
         id: `${Date.now()}-${destCoord.q},${destCoord.r}`,
@@ -162,6 +186,7 @@ export const App: React.FC = () => {
         toPixel: destPixel,
         moveDistance,
         variation,
+        stackAction,
       };
     }
 
@@ -187,16 +212,23 @@ export const App: React.FC = () => {
       },
       onRemoteAction: (action, nextState, remoteLastMove) => {
         // Sound feedback
+        const remotePiece = 'pieceId' in action ? gameState.pieces[action.pieceId] : null;
+        const remoteType = remotePiece?.type;
+
         if (action.type === 'PlacePiece') {
           sounds.playPlaceTile();
         } else if (action.type === 'MovePiece') {
           if (action.moveKind === 'cz' || action.moveKind === 'bs') {
             sounds.playJump();
+          } else if (remoteType === 'GI') {
+            sounds.playGiantStomp();
+          } else if (remoteType === 'EX') {
+            sounds.playWindCyclone();
           } else {
             sounds.playSlide();
           }
         } else if (action.type === 'ClimbStack' || action.type === 'DescendStack') {
-          sounds.playSlide();
+          sounds.playGiantStomp();
         } else if (action.type === 'SwapPiece' || action.type === 'ExilePiece') {
           sounds.playMystic();
         } else if (action.type === 'Pass') {
@@ -362,16 +394,23 @@ export const App: React.FC = () => {
     const res = applyAction(gameState, action);
     if (res.success) {
       // Sound feedback based on action type
+      const actingPiece = 'pieceId' in action ? gameState.pieces[action.pieceId] : null;
+      const actingType = actingPiece?.type;
+
       if (action.type === 'PlacePiece') {
         sounds.playPlaceTile();
       } else if (action.type === 'MovePiece') {
         if (action.moveKind === 'cz' || action.moveKind === 'bs') {
           sounds.playJump();
+        } else if (actingType === 'GI') {
+          sounds.playGiantStomp();
+        } else if (actingType === 'EX') {
+          sounds.playWindCyclone();
         } else {
           sounds.playSlide();
         }
       } else if (action.type === 'ClimbStack' || action.type === 'DescendStack') {
-        sounds.playSlide();
+        sounds.playGiantStomp();
       } else if (action.type === 'SwapPiece' || action.type === 'ExilePiece') {
         sounds.playMystic();
       } else if (action.type === 'Pass') {

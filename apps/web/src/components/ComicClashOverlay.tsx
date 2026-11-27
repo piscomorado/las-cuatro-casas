@@ -34,6 +34,7 @@ export interface ComicClashEvent {
   siegeCount?: number;
   moveDistance?: number;
   variation?: 1 | 2 | 3;
+  stackAction?: 'climb' | 'descend';
 }
 
 export interface ComicClashOverlayProps {
@@ -314,6 +315,33 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
           />
         </g>
       )}
+      {attackerType === 'GI' && fromPixel && frameIndex < 8 && (
+        <g>
+          <line
+            x1={fromPixel.x}
+            y1={fromPixel.y}
+            x2={midX}
+            y2={midY}
+            stroke="#d97706"
+            strokeWidth="4"
+            strokeDasharray="14 8"
+            strokeLinecap="round"
+            opacity={frameIndex < 4 ? 0.9 : 0.5}
+            filter="drop-shadow(0 0 8px rgba(217, 119, 6, 0.8))"
+          />
+          <line
+            x1={fromPixel.x}
+            y1={fromPixel.y}
+            x2={midX}
+            y2={midY}
+            stroke="#fbbf24"
+            strokeWidth="2"
+            strokeDasharray="6 6"
+            strokeLinecap="round"
+            opacity={0.7}
+          />
+        </g>
+      )}
 
       {/* 2. Expanding Geometric Impact Ring during Climax (Frames 12-16) for Explorador */}
       {attackerType === 'EX' && (frameIndex >= 12 && frameIndex <= 16) && (
@@ -470,51 +498,70 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
       )}
 
       {/* 6. Colossal Cyclops Titan for Gigante (GI) - 3 Dynamic Combat Moves */}
-      {attackerType === 'GI' && (
-        <g transform={`translate(${midX}, ${midY})`}>
-          {/* Luminous Golden Volcanic Ground Shockwave on Climax Impact (Frames 14-18) */}
-          {(frameIndex >= 14 && frameIndex <= 18) && (
-            <g>
-              <ellipse
-                cx="0"
-                cy="68"
-                rx={frameIndex === 15 ? 96 : 72}
-                ry={frameIndex === 15 ? 38 : 28}
-                fill="none"
-                stroke="#f59e0b"
-                strokeWidth={frameIndex === 15 ? '4' : '2.5'}
-                opacity={frameIndex === 15 ? 0.95 : 0.6}
-                filter="drop-shadow(0 0 16px rgba(245, 158, 11, 0.95))"
-              />
-              <circle
-                cx="0"
-                cy="68"
-                r={frameIndex === 15 ? 56 : 38}
-                fill="none"
-                stroke="#fbbf24"
-                strokeWidth="2.5"
-                opacity={frameIndex === 15 ? 0.85 : 0.45}
-              />
-            </g>
-          )}
-          <g transform={giganteShouldFlip ? 'scale(-1, 1)' : undefined}>
-            <g clipPath="url(#gigante-frame-clip)">
-              <image
-                href={giganteSheet}
-                xlinkHref={giganteSheet}
-                x={-GIGANTE_HALF_WIDTH - frameIndex * GIGANTE_RENDER_WIDTH}
-                y={-GIGANTE_HALF_HEIGHT}
-                width={GIGANTE_RENDER_WIDTH * GIGANTE_FRAMES}
-                height={GIGANTE_RENDER_HEIGHT}
-                style={{
-                  opacity: 1,
-                  imageRendering: 'auto',
-                }}
-              />
+      {attackerType === 'GI' && (() => {
+        const giganteVerticalOffset =
+          clash.stackAction === 'climb'
+            ? (frameIndex < 14 ? -Math.round((frameIndex / 14) * 14) : -14)
+            : clash.stackAction === 'descend'
+            ? (frameIndex < 14 ? -Math.round(14 * (1 - frameIndex / 14)) : 0)
+            : 0;
+
+        return (
+          <g transform={`translate(${midX}, ${midY + giganteVerticalOffset})`}>
+            {/* Climbing elevation badge/indicator during climb */}
+            {clash.stackAction === 'climb' && frameIndex >= 10 && (
+              <g transform="translate(0, -95)" opacity={frameIndex >= 14 ? 0.9 : 0.5}>
+                <polygon
+                  points="0,-8 10,6 -10,6"
+                  fill="#f59e0b"
+                  filter="drop-shadow(0 0 6px rgba(245, 158, 11, 0.9))"
+                />
+              </g>
+            )}
+            {/* Luminous Golden Volcanic Ground Shockwave on Climax Impact (Frames 14-18) */}
+            {(frameIndex >= 14 && frameIndex <= 18) && (
+              <g>
+                <ellipse
+                  cx="0"
+                  cy={68}
+                  rx={frameIndex === 15 ? 96 : 72}
+                  ry={frameIndex === 15 ? 38 : 28}
+                  fill="none"
+                  stroke="#f59e0b"
+                  strokeWidth={frameIndex === 15 ? '4' : '2.5'}
+                  opacity={frameIndex === 15 ? 0.95 : 0.6}
+                  filter="drop-shadow(0 0 16px rgba(245, 158, 11, 0.95))"
+                />
+                <circle
+                  cx="0"
+                  cy={68}
+                  r={frameIndex === 15 ? 56 : 38}
+                  fill="none"
+                  stroke="#fbbf24"
+                  strokeWidth="2.5"
+                  opacity={frameIndex === 15 ? 0.85 : 0.45}
+                />
+              </g>
+            )}
+            <g transform={giganteShouldFlip ? 'scale(-1, 1)' : undefined}>
+              <g clipPath="url(#gigante-frame-clip)">
+                <image
+                  href={giganteSheet}
+                  xlinkHref={giganteSheet}
+                  x={-GIGANTE_HALF_WIDTH - frameIndex * GIGANTE_RENDER_WIDTH}
+                  y={-GIGANTE_HALF_HEIGHT}
+                  width={GIGANTE_RENDER_WIDTH * GIGANTE_FRAMES}
+                  height={GIGANTE_RENDER_HEIGHT}
+                  style={{
+                    opacity: 1,
+                    imageRendering: 'auto',
+                  }}
+                />
+              </g>
             </g>
           </g>
-        </g>
-      )}
+        );
+      })()}
 
       {/* 7. Astral Mirror & Radiant Runic Prism Cage for Hechicero (HE) */}
       {attackerType === 'HE' && (
