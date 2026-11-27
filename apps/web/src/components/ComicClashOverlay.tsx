@@ -136,9 +136,9 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
         <clipPath id="cazador-frame-clip">
           <rect
             x={-CAZADOR_HALF_WIDTH}
-            y={-CAZADOR_HALF_HEIGHT}
+            y={-CAZADOR_HALF_HEIGHT - 20}
             width={CAZADOR_RENDER_WIDTH}
-            height={CAZADOR_RENDER_HEIGHT}
+            height={CAZADOR_RENDER_HEIGHT + 40}
           />
         </clipPath>
         <clipPath id="explorador-frame-clip">
