@@ -2,7 +2,7 @@ import React from 'react';
 import { House, Piece } from '@lcch/engine';
 import { getHexCornerPoints, HEX_SIZE } from '../utils/hexMath';
 import { SvgPieceIcon } from './PieceIcon';
-import { SOVEREIGN_PORTRAITS, SOVEREIGN_THEMES } from '../assets/vfx/sovereign_portraits_b64';
+import { getSovereignPortrait, SOVEREIGN_THEMES } from '../assets/vfx/sovereign_portraits_b64';
 
 export interface BoardHexProps {
   q: number;
@@ -152,8 +152,9 @@ export const BoardHex: React.FC<BoardHexProps> = ({
               const clipId = `sovereign-hex-clip-${q}-${r}`;
               const houseKey = topPiece.house as House;
               const theme = SOVEREIGN_THEMES[houseKey] ?? SOVEREIGN_THEMES.red;
-              const portraitHref = SOVEREIGN_PORTRAITS[houseKey] ?? SOVEREIGN_PORTRAITS.red;
+              const portraitHref = getSovereignPortrait(houseKey, level);
               const moodColor = level >= 5 ? theme.primary : level >= 3 ? theme.accent : theme.primary;
+              const heartbeatSpeed = level >= 5 ? '0.68s' : level >= 4 ? '0.82s' : level >= 3 ? '0.96s' : '1.1s';
 
               return (
                 <g className="sovereign-reaction-container">
@@ -163,13 +164,14 @@ export const BoardHex: React.FC<BoardHexProps> = ({
                     </clipPath>
                   </defs>
 
-                  {/* Inner Heartbeat Group: lub-dub pulse during active siege */}
+                  {/* Inner Heartbeat Group: lub-dub pulse accelerating with siege level */}
                   <g
                     className="sovereign-heartbeat"
                     style={{
                       transformOrigin: '0px 0px',
                       ['--sov-glow-color' as any]: theme.glow,
                       ['--sov-accent-color' as any]: theme.accent,
+                      ['--sov-heartbeat-speed' as any]: heartbeatSpeed,
                     }}
                   >
                     {/* Dark base viewport backdrop */}
