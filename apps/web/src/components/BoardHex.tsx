@@ -15,6 +15,8 @@ export interface BoardHexProps {
   isLastMoveOrigin?: boolean;
   isLastMoveTarget?: boolean;
   siegeDangerCount?: number; // 4 or 5 occupied neighbors around this living Sovereign
+  isSovereignReactionActive?: boolean;
+  sovereignReactionLevel?: number;
   candidateType?: 'place' | 'move' | 'swap' | 'exile' | 'climb';
   candidatePieceType?: Piece['type']; // For previewing piece icon on empty candidate hex
   onClick?: (e: React.MouseEvent) => void;
@@ -39,6 +41,8 @@ export const BoardHex: React.FC<BoardHexProps> = ({
   isLastMoveOrigin = false,
   isLastMoveTarget = false,
   siegeDangerCount,
+  isSovereignReactionActive = false,
+  sovereignReactionLevel,
   candidateType = 'place',
   candidatePieceType,
   onClick,
@@ -140,14 +144,15 @@ export const BoardHex: React.FC<BoardHexProps> = ({
 
           {/* Hex Body or Besieged Sovereign Screen */}
           {(() => {
-            const isSovereignBesieged = topPiece.type === 'SO' && (siegeDangerCount ?? 0) >= 1;
+            const isSovereignActive = topPiece.type === 'SO' && isSovereignReactionActive;
             const hasPortrait = topPiece.house === 'red' && Boolean(SOVEREIGN_RED_PORTRAIT_B64);
-            const showSovereignScreen = isSovereignBesieged && hasPortrait;
+            const showSovereignScreen = isSovereignActive && hasPortrait;
+            const level = sovereignReactionLevel ?? siegeDangerCount ?? 1;
 
             if (showSovereignScreen) {
               const clipId = `sovereign-hex-clip-${q}-${r}`;
               return (
-                <g>
+                <g className="sovereign-screen-enter">
                   <defs>
                     <clipPath id={clipId}>
                       <polygon points={hexPoints} />
@@ -166,77 +171,39 @@ export const BoardHex: React.FC<BoardHexProps> = ({
                     height={92}
                     preserveAspectRatio="xMidYMid slice"
                     clipPath={`url(#${clipId})`}
-                    className={(siegeDangerCount ?? 0) >= 3 ? 'sovereign-screen-glow' : undefined}
+                    className={level >= 3 ? 'sovereign-screen-glow' : undefined}
                     style={{
                       filter:
-                        (siegeDangerCount ?? 0) >= 5
+                        level >= 5
                           ? 'contrast(1.35) brightness(1.22) drop-shadow(0 0 10px rgba(239, 68, 68, 0.95))'
-                          : (siegeDangerCount ?? 0) >= 3
+                          : level >= 3
                           ? 'contrast(1.2) brightness(1.12) drop-shadow(0 0 6px rgba(245, 158, 11, 0.85))'
                           : 'contrast(1.1) brightness(1.05)',
                     }}
                   />
 
-                  {/* Hexagonal HUD energy border */}
+                  {/* Hexagonal HUD energy border (clean, no numbers) */}
                   <polygon
                     points={hexPoints}
                     fill="none"
                     stroke={
                       isSelected
                         ? '#ffffff'
-                        : (siegeDangerCount ?? 0) >= 5
+                        : level >= 5
                         ? '#ef4444'
-                        : (siegeDangerCount ?? 0) >= 3
+                        : level >= 3
                         ? '#f59e0b'
                         : '#ef4444'
                     }
-                    strokeWidth={isSelected ? 4 : (siegeDangerCount ?? 0) >= 4 ? 3.5 : 2.5}
-                    strokeDasharray={(siegeDangerCount ?? 0) >= 4 ? '6 3' : undefined}
-                    className={(siegeDangerCount ?? 0) >= 3 ? 'animate-pulse' : undefined}
+                    strokeWidth={isSelected ? 4 : level >= 4 ? 3.5 : 2.5}
+                    strokeDasharray={level >= 4 ? '6 3' : undefined}
+                    className={level >= 3 ? 'animate-pulse' : undefined}
                     style={{
-                      filter: `drop-shadow(0 0 ${(siegeDangerCount ?? 0) >= 5 ? 12 : 6}px ${
-                        (siegeDangerCount ?? 0) >= 5 ? '#ef4444' : '#f59e0b'
+                      filter: `drop-shadow(0 0 ${level >= 5 ? 12 : 6}px ${
+                        level >= 5 ? '#ef4444' : '#f59e0b'
                       })`,
                     }}
                   />
-
-                  {/* High-visibility Siege Badge */}
-                  <g transform="translate(0, -28)" pointerEvents="none">
-                    <rect
-                      x="-16"
-                      y="-9"
-                      width="32"
-                      height="18"
-                      rx="9"
-                      fill={
-                        (siegeDangerCount ?? 0) >= 5
-                          ? '#7f1d1d'
-                          : (siegeDangerCount ?? 0) >= 3
-                          ? '#78350f'
-                          : '#450a0a'
-                      }
-                      stroke={
-                        (siegeDangerCount ?? 0) >= 5
-                          ? '#f87171'
-                          : (siegeDangerCount ?? 0) >= 3
-                          ? '#fbbf24'
-                          : '#ef4444'
-                      }
-                      strokeWidth="1.4"
-                      style={{ filter: 'drop-shadow(0 2px 5px rgba(0,0,0,0.85))' }}
-                    />
-                    <text
-                      x="0"
-                      y="3.5"
-                      textAnchor="middle"
-                      fontSize="10"
-                      fontWeight="900"
-                      fill="#ffffff"
-                      letterSpacing="0.5"
-                    >
-                      {siegeDangerCount}/6
-                    </text>
-                  </g>
                 </g>
               );
             }
@@ -273,7 +240,7 @@ export const BoardHex: React.FC<BoardHexProps> = ({
                   />
                 )}
 
-                {/* Sovereign Siege Threat Ring (fallback when no portrait) */}
+                {/* Sovereign Siege Threat Ring (clean, no numbers) */}
                 {siegeDangerCount && siegeDangerCount >= 4 && (
                   <g pointerEvents="none">
                     <polygon
@@ -284,28 +251,6 @@ export const BoardHex: React.FC<BoardHexProps> = ({
                       className={siegeDangerCount === 5 ? 'animate-pulse' : undefined}
                       strokeDasharray={siegeDangerCount === 5 ? '6 3' : '4 2'}
                     />
-                    <g transform="translate(0, -26)">
-                      <rect
-                        x="-14"
-                        y="-8"
-                        width="28"
-                        height="16"
-                        rx="8"
-                        fill={siegeDangerCount === 5 ? '#7f1d1d' : '#78350f'}
-                        stroke={siegeDangerCount === 5 ? '#f87171' : '#fbbf24'}
-                        strokeWidth="1"
-                      />
-                      <text
-                        x="0"
-                        y="3.5"
-                        textAnchor="middle"
-                        fontSize="9"
-                        fontWeight="900"
-                        fill="#ffffff"
-                      >
-                        {siegeDangerCount}/6
-                      </text>
-                    </g>
                   </g>
                 )}
 

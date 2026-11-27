@@ -53,16 +53,16 @@ export const App: React.FC = () => {
   const [logoExpanded, setLogoExpanded] = useState(false);
 
   const checkSovereignClash = (action: Action, prevState: GameState, nextState: GameState): ComicClashEvent | null => {
-    // 1. MUST be a piece already in play moving (MovePiece, NOT PlacePiece)
-    if (action.type !== 'MovePiece' || !('to' in action) || !action.to) return null;
+    if (action.type !== 'MovePiece' && action.type !== 'PlacePiece') return null;
+    if (!('to' in action) || !action.to) return null;
 
     const destCoord = action.to;
-    const destPixel = hexToPixel(destCoord, HEX_SIZE);
-
     let actingPieceType: PieceType = 'SO';
     if ('pieceId' in action && prevState.pieces[action.pieceId]) {
       actingPieceType = prevState.pieces[action.pieceId]!.type;
     }
+
+    const destPixel = hexToPixel(destCoord, HEX_SIZE);
 
     // 2. Check if destCoord touches (is adjacent to) ANY ENEMY SOVEREIGN on the board
     for (const p of Object.values(nextState.pieces)) {
@@ -110,7 +110,7 @@ export const App: React.FC = () => {
             attackerType: actingPieceType,
             attackerHouse: action.house,
             targetHouse: p.house,
-            fromPixel: action.from ? hexToPixel(action.from, HEX_SIZE) : undefined,
+            fromPixel: ('from' in action && action.from) ? hexToPixel(action.from, HEX_SIZE) : undefined,
             toPixel: destPixel,
             sovereignPixel: hexToPixel(soCoord, HEX_SIZE),
             siegeCount,

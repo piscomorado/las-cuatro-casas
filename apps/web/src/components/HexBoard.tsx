@@ -50,6 +50,39 @@ export const HexBoard: React.FC<HexBoardProps> = ({
     }
   }, [clashEvent?.id]);
 
+  // Sovereign Besieged Reaction Screen state (awakens on attack impact, holds for 3.5s, then smoothly returns to token)
+  const [activeSovereignReaction, setActiveSovereignReaction] = useState<{
+    cellKey: CellKey;
+    level: number;
+  } | null>(null);
+
+  useEffect(() => {
+    if (clashEvent && clashEvent.targetHouse && comicAnimationsEnabled) {
+      const targetSov = Object.values(state.pieces).find(
+        (p) => p.type === 'SO' && p.house === clashEvent.targetHouse && p.location === 'board'
+      );
+      if (targetSov && targetSov.cellKey) {
+        // 650ms delay: allows the attacking weapon animation to strike, then the Sovereign face awakens in reaction!
+        const timerStart = setTimeout(() => {
+          setActiveSovereignReaction({
+            cellKey: targetSov.cellKey!,
+            level: clashEvent.siegeCount ?? 1,
+          });
+        }, 650);
+
+        // Stays visible for 3.5 seconds, then cleanly reverts to normal token
+        const timerEnd = setTimeout(() => {
+          setActiveSovereignReaction((prev) => (prev?.cellKey === targetSov.cellKey ? null : prev));
+        }, 650 + 3500);
+
+        return () => {
+          clearTimeout(timerStart);
+          clearTimeout(timerEnd);
+        };
+      }
+    }
+  }, [clashEvent?.id]);
+
   // Pan & Zoom state
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -258,6 +291,8 @@ export const HexBoard: React.FC<HexBoardProps> = ({
             const isLastOrigin = lastMove?.from ? (lastMove.from.q === coord.q && lastMove.from.r === coord.r) : false;
             const isLastTarget = lastMove?.to ? (lastMove.to.q === coord.q && lastMove.to.r === coord.r) : false;
             const siegeCount = sovereignSiegeCounts.get(cellKey);
+            const isSovereignReactionActive = activeSovereignReaction?.cellKey === cellKey;
+            const reactionLevel = isSovereignReactionActive ? activeSovereignReaction.level : undefined;
 
             return (
               <BoardHex
@@ -273,6 +308,8 @@ export const HexBoard: React.FC<HexBoardProps> = ({
                 isLastMoveOrigin={isLastOrigin}
                 isLastMoveTarget={isLastTarget}
                 siegeDangerCount={siegeCount}
+                isSovereignReactionActive={isSovereignReactionActive}
+                sovereignReactionLevel={reactionLevel}
                 onClick={handleCellClick}
               />
             );
