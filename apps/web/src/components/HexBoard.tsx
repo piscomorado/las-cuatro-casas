@@ -87,7 +87,7 @@ export const HexBoard: React.FC<HexBoardProps> = ({
           count++;
         }
       }
-      if (count >= 4) {
+      if (count >= 1) {
         sovereignSiegeCounts.set(p.cellKey, count);
       }
     }

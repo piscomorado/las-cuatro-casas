@@ -2,6 +2,7 @@ import React from 'react';
 import { House, Piece } from '@lcch/engine';
 import { getHexCornerPoints, HEX_SIZE } from '../utils/hexMath';
 import { SvgPieceIcon } from './PieceIcon';
+import { SOVEREIGN_RED_PORTRAIT_B64 } from '../assets/vfx/sovereign_portraits_b64';
 
 export interface BoardHexProps {
   q: number;
@@ -28,6 +29,8 @@ const HOUSE_THEMES: Record<House | 'ruin', { fill: string; stroke: string; glow:
 };
 
 export const BoardHex: React.FC<BoardHexProps> = ({
+  q,
+  r,
   x,
   y,
   pieces = [],
@@ -135,8 +138,109 @@ export const BoardHex: React.FC<BoardHexProps> = ({
             opacity="0.6"
           />
 
-          {/* Hex Body */}
+          {/* Hex Body or Besieged Sovereign Screen */}
           {(() => {
+            const isSovereignBesieged = topPiece.type === 'SO' && (siegeDangerCount ?? 0) >= 1;
+            const hasPortrait = topPiece.house === 'red' && Boolean(SOVEREIGN_RED_PORTRAIT_B64);
+            const showSovereignScreen = isSovereignBesieged && hasPortrait;
+
+            if (showSovereignScreen) {
+              const clipId = `sovereign-hex-clip-${q}-${r}`;
+              return (
+                <g>
+                  <defs>
+                    <clipPath id={clipId}>
+                      <polygon points={hexPoints} />
+                    </clipPath>
+                  </defs>
+
+                  {/* Dark base viewport backdrop */}
+                  <polygon points={hexPoints} fill="#050505" />
+
+                  {/* Sovereign Face cropped inside the hexagonal screen */}
+                  <image
+                    href={SOVEREIGN_RED_PORTRAIT_B64}
+                    x={-46}
+                    y={-46}
+                    width={92}
+                    height={92}
+                    preserveAspectRatio="xMidYMid slice"
+                    clipPath={`url(#${clipId})`}
+                    className={(siegeDangerCount ?? 0) >= 3 ? 'sovereign-screen-glow' : undefined}
+                    style={{
+                      filter:
+                        (siegeDangerCount ?? 0) >= 5
+                          ? 'contrast(1.35) brightness(1.22) drop-shadow(0 0 10px rgba(239, 68, 68, 0.95))'
+                          : (siegeDangerCount ?? 0) >= 3
+                          ? 'contrast(1.2) brightness(1.12) drop-shadow(0 0 6px rgba(245, 158, 11, 0.85))'
+                          : 'contrast(1.1) brightness(1.05)',
+                    }}
+                  />
+
+                  {/* Hexagonal HUD energy border */}
+                  <polygon
+                    points={hexPoints}
+                    fill="none"
+                    stroke={
+                      isSelected
+                        ? '#ffffff'
+                        : (siegeDangerCount ?? 0) >= 5
+                        ? '#ef4444'
+                        : (siegeDangerCount ?? 0) >= 3
+                        ? '#f59e0b'
+                        : '#ef4444'
+                    }
+                    strokeWidth={isSelected ? 4 : (siegeDangerCount ?? 0) >= 4 ? 3.5 : 2.5}
+                    strokeDasharray={(siegeDangerCount ?? 0) >= 4 ? '6 3' : undefined}
+                    className={(siegeDangerCount ?? 0) >= 3 ? 'animate-pulse' : undefined}
+                    style={{
+                      filter: `drop-shadow(0 0 ${(siegeDangerCount ?? 0) >= 5 ? 12 : 6}px ${
+                        (siegeDangerCount ?? 0) >= 5 ? '#ef4444' : '#f59e0b'
+                      })`,
+                    }}
+                  />
+
+                  {/* High-visibility Siege Badge */}
+                  <g transform="translate(0, -28)" pointerEvents="none">
+                    <rect
+                      x="-16"
+                      y="-9"
+                      width="32"
+                      height="18"
+                      rx="9"
+                      fill={
+                        (siegeDangerCount ?? 0) >= 5
+                          ? '#7f1d1d'
+                          : (siegeDangerCount ?? 0) >= 3
+                          ? '#78350f'
+                          : '#450a0a'
+                      }
+                      stroke={
+                        (siegeDangerCount ?? 0) >= 5
+                          ? '#f87171'
+                          : (siegeDangerCount ?? 0) >= 3
+                          ? '#fbbf24'
+                          : '#ef4444'
+                      }
+                      strokeWidth="1.4"
+                      style={{ filter: 'drop-shadow(0 2px 5px rgba(0,0,0,0.85))' }}
+                    />
+                    <text
+                      x="0"
+                      y="3.5"
+                      textAnchor="middle"
+                      fontSize="10"
+                      fontWeight="900"
+                      fill="#ffffff"
+                      letterSpacing="0.5"
+                    >
+                      {siegeDangerCount}/6
+                    </text>
+                  </g>
+                </g>
+              );
+            }
+
             const themeKey = topPiece.location === 'ruin' ? 'ruin' : topPiece.house;
             const theme = HOUSE_THEMES[themeKey];
             return (
@@ -169,7 +273,7 @@ export const BoardHex: React.FC<BoardHexProps> = ({
                   />
                 )}
 
-                {/* Sovereign Siege Threat Ring (4/6 yellow warning, 5/6 critical red danger) */}
+                {/* Sovereign Siege Threat Ring (fallback when no portrait) */}
                 {siegeDangerCount && siegeDangerCount >= 4 && (
                   <g pointerEvents="none">
                     <polygon
@@ -204,18 +308,18 @@ export const BoardHex: React.FC<BoardHexProps> = ({
                     </g>
                   </g>
                 )}
+
+                {/* Official Emblem Image from manual v0.4 (Embedded Base64) */}
+                <SvgPieceIcon
+                  type={topPiece.type}
+                  x={-20}
+                  y={-20}
+                  size={40}
+                  white={true}
+                />
               </>
             );
           })()}
-
-          {/* Official Emblem Image from manual v0.4 (Embedded Base64) */}
-          <SvgPieceIcon
-            type={topPiece.type}
-            x={-20}
-            y={-20}
-            size={40}
-            white={true}
-          />
 
           {/* Stack count badge if height > 1 */}
           {stackHeight > 1 && (

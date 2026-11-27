@@ -49,6 +49,20 @@ html, body, #root {
   background: radial-gradient(ellipse at center, transparent 60%, rgba(239, 68, 68, 0.25) 100%);
 }
 
+/* Sovereign Besieged Hexagonal Screen Breathing Glow */
+@keyframes sovereignScreenPulse {
+  0%, 100% {
+    filter: drop-shadow(0 0 6px rgba(239, 68, 68, 0.75)) contrast(1.1);
+  }
+  50% {
+    filter: drop-shadow(0 0 14px rgba(245, 158, 11, 0.95)) contrast(1.22) brightness(1.08);
+  }
+}
+
+.sovereign-screen-glow {
+  animation: sovereignScreenPulse 2.2s ease-in-out infinite;
+}
+
 /* Comic Clash Dramatic Appearance & Extended Fade-out */
 @keyframes comicPopIn {
   0% {
