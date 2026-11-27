@@ -70,10 +70,10 @@ export const HexBoard: React.FC<HexBoardProps> = ({
           });
         }, 650);
 
-        // Stays visible for 3.5 seconds, then cleanly reverts to normal token
+        // Stays visible for 10 seconds, then progressively dissolves over 1.8s (total 11.8s)
         const timerEnd = setTimeout(() => {
           setActiveSovereignReaction((prev) => (prev?.cellKey === targetSov.cellKey ? null : prev));
-        }, 650 + 3500);
+        }, 650 + 11800);
 
         return () => {
           clearTimeout(timerStart);

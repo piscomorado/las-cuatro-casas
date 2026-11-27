@@ -151,8 +151,12 @@ export const BoardHex: React.FC<BoardHexProps> = ({
 
             if (showSovereignScreen) {
               const clipId = `sovereign-hex-clip-${q}-${r}`;
+              const moodLabel = level >= 5 ? 'FRENESÍ' : level >= 3 ? 'FURIA' : 'ALERTA';
+              const moodColor = level >= 5 ? '#ef4444' : level >= 3 ? '#f59e0b' : '#ef4444';
+              const moodBg = level >= 5 ? '#7f1d1d' : level >= 3 ? '#78350f' : '#450a0a';
+
               return (
-                <g className="sovereign-screen-enter">
+                <g className="sovereign-reaction-container">
                   <defs>
                     <clipPath id={clipId}>
                       <polygon points={hexPoints} />
@@ -175,35 +179,70 @@ export const BoardHex: React.FC<BoardHexProps> = ({
                     style={{
                       filter:
                         level >= 5
-                          ? 'contrast(1.35) brightness(1.22) drop-shadow(0 0 10px rgba(239, 68, 68, 0.95))'
+                          ? 'contrast(1.38) brightness(1.24) drop-shadow(0 0 14px rgba(239, 68, 68, 0.95))'
                           : level >= 3
-                          ? 'contrast(1.2) brightness(1.12) drop-shadow(0 0 6px rgba(245, 158, 11, 0.85))'
-                          : 'contrast(1.1) brightness(1.05)',
+                          ? 'contrast(1.22) brightness(1.15) drop-shadow(0 0 8px rgba(245, 158, 11, 0.9))'
+                          : 'contrast(1.12) brightness(1.06)',
                     }}
+                  />
+
+                  {/* Dramatic Strobe Flash at emergence */}
+                  <polygon
+                    points={hexPoints}
+                    fill={level >= 4 ? '#ffffff' : '#fef08a'}
+                    className="sovereign-strobe-overlay"
+                    pointerEvents="none"
                   />
 
                   {/* Hexagonal HUD energy border (clean, no numbers) */}
                   <polygon
                     points={hexPoints}
                     fill="none"
-                    stroke={
-                      isSelected
-                        ? '#ffffff'
-                        : level >= 5
-                        ? '#ef4444'
-                        : level >= 3
-                        ? '#f59e0b'
-                        : '#ef4444'
-                    }
+                    stroke={isSelected ? '#ffffff' : moodColor}
                     strokeWidth={isSelected ? 4 : level >= 4 ? 3.5 : 2.5}
                     strokeDasharray={level >= 4 ? '6 3' : undefined}
                     className={level >= 3 ? 'animate-pulse' : undefined}
                     style={{
-                      filter: `drop-shadow(0 0 ${level >= 5 ? 12 : 6}px ${
-                        level >= 5 ? '#ef4444' : '#f59e0b'
-                      })`,
+                      filter: `drop-shadow(0 0 ${level >= 5 ? 14 : 7}px ${moodColor})`,
                     }}
                   />
+
+                  {/* Dynamic Corner Sparks when under heavy stress */}
+                  {level >= 3 && (
+                    <g pointerEvents="none" className="animate-pulse">
+                      <circle cx="-32" cy="-20" r="2.5" fill={moodColor} filter={`drop-shadow(0 0 6px ${moodColor})`} />
+                      <circle cx="32" cy="-20" r="2.5" fill={moodColor} filter={`drop-shadow(0 0 6px ${moodColor})`} />
+                      <circle cx="0" cy="38" r="2.5" fill={moodColor} filter={`drop-shadow(0 0 6px ${moodColor})`} />
+                    </g>
+                  )}
+
+                  {/* Stylized Emotional State Badge (Pulp combat status without numbers) */}
+                  <g transform="translate(0, -28)" pointerEvents="none">
+                    <rect
+                      x="-24"
+                      y="-8"
+                      width="48"
+                      height="16"
+                      rx="4"
+                      fill={moodBg}
+                      stroke={moodColor}
+                      strokeWidth="1.2"
+                      style={{
+                        filter: `drop-shadow(0 0 ${level >= 4 ? 8 : 4}px ${moodColor})`,
+                      }}
+                    />
+                    <text
+                      x="0"
+                      y="3.5"
+                      textAnchor="middle"
+                      fontSize="8"
+                      fontWeight="900"
+                      letterSpacing="1.2"
+                      fill="#ffffff"
+                    >
+                      {moodLabel}
+                    </text>
+                  </g>
                 </g>
               );
             }

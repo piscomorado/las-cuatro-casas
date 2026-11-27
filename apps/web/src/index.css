@@ -63,19 +63,63 @@ html, body, #root {
   animation: sovereignScreenPulse 2.2s ease-in-out infinite;
 }
 
-@keyframes sovereignScreenFadeIn {
+/* Sovereign Zoom-In / Zoom-Out Punch */
+@keyframes sovereignZoomPunch {
   0% {
-    opacity: 0;
-    transform: scale(0.92);
+    transform: scale(0.62);
+  }
+  26% {
+    transform: scale(1.36);
+  }
+  46% {
+    transform: scale(0.93);
+  }
+  64% {
+    transform: scale(1.06);
+  }
+  80% {
+    transform: scale(1);
   }
   100% {
-    opacity: 1;
     transform: scale(1);
   }
 }
 
-.sovereign-screen-enter {
-  animation: sovereignScreenFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+/* Strobe flash upon emergence */
+@keyframes sovereignStrobeFlash {
+  0% { opacity: 0; }
+  12% { opacity: 0.95; }
+  24% { opacity: 0.08; }
+  40% { opacity: 0.92; }
+  54% { opacity: 0.15; }
+  70% { opacity: 0.8; }
+  85% { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+.sovereign-strobe-overlay {
+  animation: sovereignStrobeFlash 0.75s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
+  mix-blend-mode: screen;
+}
+
+/* 10 seconds hold + 1.8s progressive dissolve (Total 11.8s) */
+@keyframes sovereignScreenFadeCycle {
+  0% {
+    opacity: 1;
+  }
+  84.7% { /* 10s mark in a 11.8s animation */
+    opacity: 1;
+  }
+  100% { /* 11.8s mark: smoothly dissolved */
+    opacity: 0;
+  }
+}
+
+.sovereign-reaction-container {
+  animation:
+    sovereignZoomPunch 0.75s cubic-bezier(0.16, 1, 0.3, 1) both,
+    sovereignScreenFadeCycle 11.8s linear forwards;
+  transform-origin: center;
 }
 
 /* Comic Clash Dramatic Appearance & Extended Fade-out */
