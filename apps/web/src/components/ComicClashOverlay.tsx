@@ -25,11 +25,12 @@ export interface ComicClashOverlayProps {
 
 const TOTAL_FRAMES = 12;
 const CAZADOR_FRAMES = 10;
+const BESTIA_FRAMES = 9;
 const FRAME_RENDER_SIZE = 195; // Calibrated to reach halfway into surrounding adjacent hexes
 const HALF_SIZE = FRAME_RENDER_SIZE / 2;
 const CAZADOR_RENDER_SIZE = 168; // Calibrated to cover piece and halfway into surrounding adjacent hexes
 const CAZADOR_HALF_SIZE = CAZADOR_RENDER_SIZE / 2;
-const BESTIA_RENDER_SIZE = 250; // Amplified vertical presence for Bestia claw tear
+const BESTIA_RENDER_SIZE = 168; // Calibrated to cover piece and halfway into surrounding adjacent hexes
 const BESTIA_HALF_SIZE = BESTIA_RENDER_SIZE / 2;
 const GIGANTE_RENDER_SIZE = 285; // Colossal Runic Obsidian War Hammer presence
 const GIGANTE_HALF_SIZE = GIGANTE_RENDER_SIZE / 2;
@@ -65,7 +66,7 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
     const frameDurations = isCazador
       ? [60, 60, 70, 50, 50, 280, 140, 110, 90, 80] // Frame 6 (idx 5) is the downward X-slash ground impact with slow-mo hold!
       : isBestia
-      ? [35, 40, 45, 50, 65, 140, 240, 320, 180, 85, 75, 65]
+      ? [50, 50, 60, 60, 360, 320, 140, 110, 90] // Frame 5 (idx 4) is the rearing beast aerial hold with huge emphasis, Frame 6 (idx 5) is the impact slam!
       : isGigante
       ? [100, 120, 130, 100, 90, 120, 340, 260, 160, 100, 80, 70]
       : isHechicero
@@ -77,7 +78,7 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
     let timerId: any;
 
     const advance = () => {
-      const maxFrames = isCazador ? CAZADOR_FRAMES : TOTAL_FRAMES;
+      const maxFrames = isCazador ? CAZADOR_FRAMES : isBestia ? BESTIA_FRAMES : TOTAL_FRAMES;
       if (cur < maxFrames - 1) {
         cur++;
         setFrameIndex(cur);
@@ -281,20 +282,32 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
         </g>
       )}
 
-      {/* 5. Feral Beast Downward Spatial Claw Slash for Bestia Saltadora (BS) */}
+      {/* 5. 2D Action Predatory Beast Strike for Bestia Saltadora (BS) */}
       {attackerType === 'BS' && (
         <g transform={`translate(${midX}, ${midY})`}>
-          {/* Spatial Void Tear Backdrop during Peak Laceration (Frames 5 to 8) */}
-          {frameIndex >= 5 && frameIndex <= 8 && (
-            <ellipse
-              cx="0"
-              cy="0"
-              rx="55"
-              ry="115"
-              fill="#030712"
-              opacity={frameIndex === 6 || frameIndex === 7 ? 0.82 : 0.45}
-              filter="drop-shadow(0 0 25px rgba(234, 88, 12, 0.95)) drop-shadow(0 0 50px rgba(220, 38, 38, 0.7))"
-            />
+          {/* Luminous Crimson & Gold Ground Shockwave on Climax Slam (Frames 5-6) */}
+          {(frameIndex === 4 || frameIndex === 5) && (
+            <g>
+              <ellipse
+                cx="0"
+                cy="52"
+                rx={frameIndex === 5 ? 56 : 38}
+                ry={frameIndex === 5 ? 20 : 14}
+                fill="none"
+                stroke="#ef4444"
+                strokeWidth={frameIndex === 5 ? '3' : '2'}
+                opacity={frameIndex === 5 ? 0.95 : 0.6}
+              />
+              <circle
+                cx="0"
+                cy="52"
+                r={frameIndex === 5 ? 32 : 22}
+                fill="none"
+                stroke="#f59e0b"
+                strokeWidth={frameIndex === 5 ? '2' : '1.5'}
+                opacity={frameIndex === 5 ? 0.85 : 0.5}
+              />
+            </g>
           )}
           <g clipPath="url(#bestia-frame-clip)">
             <image
@@ -302,13 +315,11 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
               xlinkHref={BESTIA_SPRITESHEET_B64}
               x={-BESTIA_HALF_SIZE - frameIndex * BESTIA_RENDER_SIZE}
               y={-BESTIA_HALF_SIZE}
-              width={BESTIA_RENDER_SIZE * TOTAL_FRAMES}
+              width={BESTIA_RENDER_SIZE * BESTIA_FRAMES}
               height={BESTIA_RENDER_SIZE}
               style={{
                 opacity: 1,
                 imageRendering: 'auto',
-                filter:
-                  'drop-shadow(0 0 16px rgba(255, 110, 20, 0.95)) drop-shadow(0 0 38px rgba(220, 38, 38, 0.65)) contrast(1.2) brightness(1.15)',
               }}
             />
           </g>
