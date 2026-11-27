@@ -30,7 +30,7 @@ export interface ComicClashOverlayProps {
 }
 
 const TOTAL_FRAMES = 12;
-const CAZADOR_FRAMES = 18;
+const CAZADOR_FRAMES = 30;
 const BESTIA_FRAMES = 9;
 const FRAME_RENDER_SIZE = 195; // Calibrated to reach halfway into surrounding adjacent hexes
 const HALF_SIZE = FRAME_RENDER_SIZE / 2;
@@ -72,7 +72,7 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
     const isHechicero = clash.attackerType === 'HE';
     const isNigromante = clash.attackerType === 'NI';
     const frameDurations = isCazador
-      ? [50, 50, 50, 55, 55, 55, 55, 60, 65, 70, 260, 140, 80, 70, 60, 55, 50, 50] // Frame 11 (idx 10) is the climax strike/slam impact with dramatic 260ms slow-mo hold!
+      ? Array(30).fill(38) // Silky-smooth 26fps continuous video timing (38ms per frame, 100% fluid with zero mid-motion stutter)
       : isBestia
       ? [70, 70, 80, 70, 280, 280, 140, 110, 90] // Smooth kinetic easing: Frame 5 aerial hold + Frame 6 slash impact hold
       : isGigante
@@ -190,8 +190,8 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
         </clipPath>
       </defs>
 
-      {/* 1. Kinetic Streaks between Origin and Destination (Frames 0-3) */}
-      {attackerType === 'CZ' && fromPixel && frameIndex < 4 && (
+      {/* 1. Kinetic Streaks between Origin and Destination (Frames 0-7) */}
+      {attackerType === 'CZ' && fromPixel && frameIndex < 8 && (
         <line
           x1={fromPixel.x}
           y1={fromPixel.y}
@@ -275,27 +275,27 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
       {/* 3. 2D Action Assassin Strike for Cazador (CZ) - 3 Dynamic Combat Moves */}
       {attackerType === 'CZ' && (
         <g transform={`translate(${midX}, ${midY})`}>
-          {/* Luminous Sapphire & Gold Ground Shockwave on Climax Impact (Frames 10-11) */}
-          {(frameIndex === 10 || frameIndex === 11) && (
+          {/* Luminous Sapphire & Gold Ground Shockwave on Climax Impact (Frames 15-19) */}
+          {(frameIndex >= 15 && frameIndex <= 19) && (
             <g>
               <ellipse
                 cx="0"
                 cy="54"
-                rx={frameIndex === 10 ? 64 : 46}
-                ry={frameIndex === 10 ? 24 : 18}
+                rx={frameIndex === 16 ? 64 : 46}
+                ry={frameIndex === 16 ? 24 : 18}
                 fill="none"
                 stroke="#38bdf8"
-                strokeWidth={frameIndex === 10 ? '3.5' : '2'}
-                opacity={frameIndex === 10 ? 0.95 : 0.6}
+                strokeWidth={frameIndex === 16 ? '3.5' : '2'}
+                opacity={frameIndex === 16 ? 0.95 : 0.6}
               />
               <circle
                 cx="0"
                 cy="54"
-                r={frameIndex === 10 ? 38 : 26}
+                r={frameIndex === 16 ? 38 : 26}
                 fill="none"
                 stroke="#fbbf24"
-                strokeWidth={frameIndex === 10 ? '2.5' : '1.5'}
-                opacity={frameIndex === 10 ? 0.9 : 0.5}
+                strokeWidth={frameIndex === 16 ? '2.5' : '1.5'}
+                opacity={frameIndex === 16 ? 0.9 : 0.5}
               />
             </g>
           )}
