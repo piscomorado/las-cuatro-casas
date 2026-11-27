@@ -64,7 +64,7 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
     const isHechicero = clash.attackerType === 'HE';
     const isNigromante = clash.attackerType === 'NI';
     const frameDurations = isCazador
-      ? [60, 60, 70, 50, 50, 280, 140, 110, 90, 80] // Frame 6 (idx 5) is the downward X-slash ground impact with slow-mo hold!
+      ? [50, 50, 60, 50, 50, 360, 180, 120, 90, 80] // Frame 6 (idx 5) is the downward X-slash ground impact with dramatic 360ms slow-mo hold!
       : isBestia
       ? [50, 50, 60, 60, 360, 320, 140, 110, 90] // Frame 5 (idx 4) is the rearing beast aerial hold with huge emphasis, Frame 6 (idx 5) is the impact slam!
       : isGigante
@@ -220,27 +220,27 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
       {/* 3. 2D Action Assassin Strike for Cazador (CZ) */}
       {attackerType === 'CZ' && (
         <g transform={`translate(${midX}, ${midY})`}>
-          {/* Subtle Sapphire Ground Ring on Climax Slam (Frames 5-6) */}
+          {/* Luminous Sapphire & Gold Ground Shockwave on Figura 6 Climax Slam (Frames 5-6) */}
           {(frameIndex === 5 || frameIndex === 6) && (
             <g>
               <ellipse
                 cx="0"
                 cy="48"
-                rx={frameIndex === 5 ? 54 : 38}
-                ry={frameIndex === 5 ? 20 : 14}
+                rx={frameIndex === 5 ? 58 : 42}
+                ry={frameIndex === 5 ? 22 : 16}
                 fill="none"
                 stroke="#38bdf8"
-                strokeWidth={frameIndex === 5 ? '3' : '2'}
+                strokeWidth={frameIndex === 5 ? '3.5' : '2'}
                 opacity={frameIndex === 5 ? 0.95 : 0.6}
               />
               <circle
                 cx="0"
                 cy="48"
-                r={frameIndex === 5 ? 32 : 22}
+                r={frameIndex === 5 ? 34 : 24}
                 fill="none"
                 stroke="#fbbf24"
-                strokeWidth={frameIndex === 5 ? '2' : '1.5'}
-                opacity={frameIndex === 5 ? 0.85 : 0.5}
+                strokeWidth={frameIndex === 5 ? '2.5' : '1.5'}
+                opacity={frameIndex === 5 ? 0.9 : 0.5}
               />
             </g>
           )}
