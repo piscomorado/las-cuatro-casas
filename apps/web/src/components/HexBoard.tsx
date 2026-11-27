@@ -50,11 +50,12 @@ export const HexBoard: React.FC<HexBoardProps> = ({
     }
   }, [clashEvent?.id]);
 
-  // Sovereign Besieged Reaction Screen state (awakens on attack impact, holds for 3.5s, then smoothly returns to token)
+  // Sovereign Besieged Reaction Screen state (awakens on attack impact, holds for 10s, then smoothly returns to token)
   const [activeSovereignReaction, setActiveSovereignReaction] = useState<{
     cellKey: CellKey;
     level: number;
   } | null>(null);
+  const sovereignReactionTimerRef = useRef<{ start?: ReturnType<typeof setTimeout>; end?: ReturnType<typeof setTimeout> }>({});
 
   useEffect(() => {
     if (clashEvent && clashEvent.targetHouse && comicAnimationsEnabled) {
@@ -62,26 +63,32 @@ export const HexBoard: React.FC<HexBoardProps> = ({
         (p) => p.type === 'SO' && p.house === clashEvent.targetHouse && p.location === 'board'
       );
       if (targetSov && targetSov.cellKey) {
+        if (sovereignReactionTimerRef.current.start) clearTimeout(sovereignReactionTimerRef.current.start);
+        if (sovereignReactionTimerRef.current.end) clearTimeout(sovereignReactionTimerRef.current.end);
+
+        const targetCell = targetSov.cellKey;
         // 650ms delay: allows the attacking weapon animation to strike, then the Sovereign face awakens in reaction!
-        const timerStart = setTimeout(() => {
+        sovereignReactionTimerRef.current.start = setTimeout(() => {
           setActiveSovereignReaction({
-            cellKey: targetSov.cellKey!,
+            cellKey: targetCell,
             level: clashEvent.siegeCount ?? 1,
           });
         }, 650);
 
         // Stays visible for 10 seconds, then progressively dissolves over 1.8s (total 11.8s)
-        const timerEnd = setTimeout(() => {
-          setActiveSovereignReaction((prev) => (prev?.cellKey === targetSov.cellKey ? null : prev));
+        sovereignReactionTimerRef.current.end = setTimeout(() => {
+          setActiveSovereignReaction((prev) => (prev?.cellKey === targetCell ? null : prev));
         }, 650 + 11800);
-
-        return () => {
-          clearTimeout(timerStart);
-          clearTimeout(timerEnd);
-        };
       }
     }
   }, [clashEvent?.id]);
+
+  useEffect(() => {
+    return () => {
+      if (sovereignReactionTimerRef.current.start) clearTimeout(sovereignReactionTimerRef.current.start);
+      if (sovereignReactionTimerRef.current.end) clearTimeout(sovereignReactionTimerRef.current.end);
+    };
+  }, []);
 
   // Pan & Zoom state
   const [pan, setPan] = useState({ x: 0, y: 0 });

@@ -144,97 +144,22 @@ export const BoardHex: React.FC<BoardHexProps> = ({
 
           {/* Hex Body or Besieged Sovereign Screen */}
           {(() => {
+            const themeKey = topPiece.location === 'ruin' ? 'ruin' : topPiece.house;
+            const theme = HOUSE_THEMES[themeKey];
             const isSovereign = topPiece.type === 'SO';
             const showSovereignScreen = isSovereign && isSovereignReactionActive;
             const level = sovereignReactionLevel ?? siegeDangerCount ?? 1;
 
-            if (showSovereignScreen) {
-              const clipId = `sovereign-hex-clip-${q}-${r}`;
-              const houseKey = topPiece.house as House;
-              const theme = SOVEREIGN_THEMES[houseKey] ?? SOVEREIGN_THEMES.red;
-              const portraitHref = getSovereignPortrait(houseKey, level);
-              const moodColor = level >= 5 ? theme.primary : level >= 3 ? theme.accent : theme.primary;
-              const heartbeatSpeed = level >= 5 ? '0.68s' : level >= 4 ? '0.82s' : level >= 3 ? '0.96s' : '1.1s';
+            const houseKey = topPiece.house as House;
+            const sovTheme = SOVEREIGN_THEMES[houseKey] ?? SOVEREIGN_THEMES.red;
+            const portraitHref = getSovereignPortrait(houseKey, level);
+            const moodColor = level >= 5 ? sovTheme.primary : level >= 3 ? sovTheme.accent : sovTheme.primary;
+            const heartbeatSpeed = level >= 5 ? '0.68s' : level >= 4 ? '0.82s' : level >= 3 ? '0.96s' : '1.1s';
+            const clipId = `sovereign-hex-clip-${q}-${r}`;
 
-              return (
-                <g className="sovereign-reaction-container">
-                  <defs>
-                    <clipPath id={clipId}>
-                      <polygon points={hexPoints} />
-                    </clipPath>
-                  </defs>
-
-                  {/* Inner Heartbeat Group: lub-dub pulse accelerating with siege level */}
-                  <g
-                    className="sovereign-heartbeat"
-                    style={{
-                      transformOrigin: '0px 0px',
-                      ['--sov-glow-color' as any]: theme.glow,
-                      ['--sov-accent-color' as any]: theme.accent,
-                      ['--sov-heartbeat-speed' as any]: heartbeatSpeed,
-                    }}
-                  >
-                    {/* Dark base viewport backdrop */}
-                    <polygon points={hexPoints} fill="#050505" />
-
-                    {/* Sovereign Face cropped inside the hexagonal screen */}
-                    <image
-                      href={portraitHref}
-                      x={-46}
-                      y={-46}
-                      width={92}
-                      height={92}
-                      preserveAspectRatio="xMidYMid slice"
-                      clipPath={`url(#${clipId})`}
-                      className={level >= 3 ? 'sovereign-screen-glow' : undefined}
-                      style={{
-                        filter:
-                          level >= 5
-                            ? `contrast(1.38) brightness(1.24) drop-shadow(0 0 14px ${theme.glow})`
-                            : level >= 3
-                            ? `contrast(1.22) brightness(1.15) drop-shadow(0 0 8px ${theme.glow})`
-                            : 'contrast(1.12) brightness(1.06)',
-                      }}
-                    />
-
-                    {/* Hexagonal HUD energy border (clean, no numbers, no notices) */}
-                    <polygon
-                      points={hexPoints}
-                      fill="none"
-                      stroke={isSelected ? '#ffffff' : moodColor}
-                      strokeWidth={isSelected ? 4 : level >= 4 ? 3.5 : 2.5}
-                      strokeDasharray={level >= 4 ? '6 3' : undefined}
-                      className={level >= 3 ? 'animate-pulse' : undefined}
-                      style={{
-                        filter: `drop-shadow(0 0 ${level >= 5 ? 14 : 7}px ${moodColor})`,
-                      }}
-                    />
-
-                    {/* Dynamic Corner Sparks when under heavy stress */}
-                    {level >= 3 && (
-                      <g pointerEvents="none" className="animate-pulse">
-                        <circle cx="-32" cy="-20" r="2.5" fill={moodColor} filter={`drop-shadow(0 0 6px ${moodColor})`} />
-                        <circle cx="32" cy="-20" r="2.5" fill={moodColor} filter={`drop-shadow(0 0 6px ${moodColor})`} />
-                        <circle cx="0" cy="38" r="2.5" fill={moodColor} filter={`drop-shadow(0 0 6px ${moodColor})`} />
-                      </g>
-                    )}
-                  </g>
-
-                  {/* Dramatic Strobe Flash at emergence */}
-                  <polygon
-                    points={hexPoints}
-                    fill={level >= 4 ? '#ffffff' : theme.strobe}
-                    className="sovereign-strobe-overlay"
-                    pointerEvents="none"
-                  />
-                </g>
-              );
-            }
-
-            const themeKey = topPiece.location === 'ruin' ? 'ruin' : topPiece.house;
-            const theme = HOUSE_THEMES[themeKey];
             return (
               <>
+                {/* 1. Base Piece: Always rendered underneath so when the sovereign screen dissolves, the standard piece is immediately and seamlessly revealed */}
                 <polygon
                   points={hexPoints}
                   fill={theme.fill}
@@ -264,7 +189,7 @@ export const BoardHex: React.FC<BoardHexProps> = ({
                 )}
 
                 {/* Sovereign Siege Threat Ring (clean, no numbers) */}
-                {siegeDangerCount && siegeDangerCount >= 4 && (
+                {siegeDangerCount && siegeDangerCount >= 4 && !showSovereignScreen && (
                   <g pointerEvents="none">
                     <polygon
                       points={hexPoints}
@@ -285,6 +210,81 @@ export const BoardHex: React.FC<BoardHexProps> = ({
                   size={40}
                   white={true}
                 />
+
+                {/* 2. Besieged Sovereign Hexagonal Screen Overlay (Emerges on siege clash, stays for 10s, then dissolves smoothly back to the base piece) */}
+                {showSovereignScreen && (
+                  <g className="sovereign-reaction-container">
+                    <defs>
+                      <clipPath id={clipId}>
+                        <polygon points={hexPoints} />
+                      </clipPath>
+                    </defs>
+
+                    {/* Inner Heartbeat Group: lub-dub pulse accelerating with siege level */}
+                    <g
+                      className="sovereign-heartbeat"
+                      style={{
+                        transformOrigin: '0px 0px',
+                        ['--sov-glow-color' as any]: sovTheme.glow,
+                        ['--sov-accent-color' as any]: sovTheme.accent,
+                        ['--sov-heartbeat-speed' as any]: heartbeatSpeed,
+                      }}
+                    >
+                      {/* Dark base viewport backdrop */}
+                      <polygon points={hexPoints} fill="#050505" />
+
+                      {/* Sovereign Face cropped inside the hexagonal screen */}
+                      <image
+                        href={portraitHref}
+                        x={-46}
+                        y={-46}
+                        width={92}
+                        height={92}
+                        preserveAspectRatio="xMidYMid slice"
+                        clipPath={`url(#${clipId})`}
+                        className={level >= 3 ? 'sovereign-screen-glow' : undefined}
+                        style={{
+                          filter:
+                            level >= 5
+                              ? `contrast(1.38) brightness(1.24) drop-shadow(0 0 14px ${sovTheme.glow})`
+                              : level >= 3
+                              ? `contrast(1.22) brightness(1.15) drop-shadow(0 0 8px ${sovTheme.glow})`
+                              : 'contrast(1.12) brightness(1.06)',
+                        }}
+                      />
+
+                      {/* Hexagonal HUD energy border (clean, no numbers, no notices) */}
+                      <polygon
+                        points={hexPoints}
+                        fill="none"
+                        stroke={isSelected ? '#ffffff' : moodColor}
+                        strokeWidth={isSelected ? 4 : level >= 4 ? 3.5 : 2.5}
+                        strokeDasharray={level >= 4 ? '6 3' : undefined}
+                        className={level >= 3 ? 'animate-pulse' : undefined}
+                        style={{
+                          filter: `drop-shadow(0 0 ${level >= 5 ? 14 : 7}px ${moodColor})`,
+                        }}
+                      />
+
+                      {/* Dynamic Corner Sparks when under heavy stress */}
+                      {level >= 3 && (
+                        <g pointerEvents="none" className="animate-pulse">
+                          <circle cx="-32" cy="-20" r="2.5" fill={moodColor} filter={`drop-shadow(0 0 6px ${moodColor})`} />
+                          <circle cx="32" cy="-20" r="2.5" fill={moodColor} filter={`drop-shadow(0 0 6px ${moodColor})`} />
+                          <circle cx="0" cy="38" r="2.5" fill={moodColor} filter={`drop-shadow(0 0 6px ${moodColor})`} />
+                        </g>
+                      )}
+                    </g>
+
+                    {/* Dramatic Strobe Flash at emergence */}
+                    <polygon
+                      points={hexPoints}
+                      fill={level >= 4 ? '#ffffff' : sovTheme.strobe}
+                      className="sovereign-strobe-overlay"
+                      pointerEvents="none"
+                    />
+                  </g>
+                )}
               </>
             );
           })()}
