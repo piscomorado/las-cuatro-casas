@@ -66,7 +66,7 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
     const frameDurations = isCazador
       ? [50, 50, 60, 50, 50, 360, 180, 120, 90, 80] // Frame 6 (idx 5) is the downward X-slash ground impact with dramatic 360ms slow-mo hold!
       : isBestia
-      ? [50, 50, 60, 60, 360, 320, 140, 110, 90] // Frame 5 (idx 4) is the rearing beast aerial hold with huge emphasis, Frame 6 (idx 5) is the impact slam!
+      ? [70, 70, 80, 70, 280, 280, 140, 110, 90] // Smooth kinetic easing: Frame 5 aerial hold + Frame 6 slash impact hold
       : isGigante
       ? [100, 120, 130, 100, 90, 120, 340, 260, 160, 100, 80, 70]
       : isHechicero
@@ -174,6 +174,32 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
           strokeLinecap="round"
           opacity={frameIndex === 0 ? 0.85 : 0.45}
         />
+      )}
+      {attackerType === 'BS' && fromPixel && frameIndex < 5 && (
+        <g>
+          <line
+            x1={fromPixel.x}
+            y1={fromPixel.y}
+            x2={midX}
+            y2={midY}
+            stroke="#ef4444"
+            strokeWidth="3.5"
+            strokeDasharray="16 8"
+            strokeLinecap="round"
+            opacity={frameIndex < 3 ? 0.9 : 0.45}
+          />
+          <line
+            x1={fromPixel.x}
+            y1={fromPixel.y}
+            x2={midX}
+            y2={midY}
+            stroke="#f59e0b"
+            strokeWidth="1.5"
+            strokeDasharray="6 6"
+            strokeLinecap="round"
+            opacity={0.7}
+          />
+        </g>
       )}
       {attackerType === 'EX' && fromPixel && frameIndex < 4 && (
         <g>
