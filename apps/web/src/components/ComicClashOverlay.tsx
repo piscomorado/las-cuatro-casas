@@ -20,7 +20,11 @@ import {
   GIGANTE_VAR2_B64,
   GIGANTE_VAR3_B64,
 } from '../assets/vfx/gigante_b64';
-import { HECHICERO_SPRITESHEET_B64 } from '../assets/vfx/hechicero_b64';
+import {
+  HECHICERO_VAR1_B64,
+  HECHICERO_VAR2_B64,
+  HECHICERO_VAR3_B64,
+} from '../assets/vfx/hechicero_b64';
 import { NIGROMANTE_SPRITESHEET_B64 } from '../assets/vfx/nigromante_b64';
 
 export interface ComicClashEvent {
@@ -63,8 +67,11 @@ const GIGANTE_RENDER_WIDTH = 374; // Colossal Cyclops Titan presence (25% larger
 const GIGANTE_RENDER_HEIGHT = 210;
 const GIGANTE_HALF_WIDTH = GIGANTE_RENDER_WIDTH / 2;
 const GIGANTE_HALF_HEIGHT = GIGANTE_RENDER_HEIGHT / 2;
-const HECHICERO_RENDER_SIZE = 275; // Astral Mirror & Runic Prism Cage presence
-const HECHICERO_HALF_SIZE = HECHICERO_RENDER_SIZE / 2;
+const HECHICERO_FRAMES = 30;
+const HECHICERO_RENDER_WIDTH = 298; // Calibrated 16:9 ratio covering piece and reaching into adjacent hexes
+const HECHICERO_RENDER_HEIGHT = 168;
+const HECHICERO_HALF_WIDTH = HECHICERO_RENDER_WIDTH / 2;
+const HECHICERO_HALF_HEIGHT = HECHICERO_RENDER_HEIGHT / 2;
 const NIGROMANTE_RENDER_SIZE = 280; // Ceremonial Jade Skull & Soulfire Vortex presence
 const NIGROMANTE_HALF_SIZE = NIGROMANTE_RENDER_SIZE / 2;
 
@@ -102,7 +109,7 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
       : isGigante
       ? Array(30).fill(38) // Silky-smooth 26fps continuous video timing for Colossal Gigante (38ms per frame, 100% fluid)
       : isHechicero
-      ? [70, 80, 85, 95, 100, 120, 480, 140, 120, 90, 75, 65] // Frame 7 (idx 6) peak halo & crystal cage hold
+      ? Array(30).fill(38) // Silky-smooth 26fps continuous video timing for Ultra-Modern Hechicero (38ms per frame, 100% fluid)
       : isNigromante
       ? [70, 80, 85, 95, 100, 120, 500, 140, 120, 90, 75, 65] // Frame 7 (idx 6) peak vortex & spiked star seal hold
       : [40, 45, 50, 50, 55, 60, 180, 260, 140, 65, 60, 55];
@@ -110,7 +117,7 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
     let timerId: any;
 
     const advance = () => {
-      const maxFrames = isCazador ? CAZADOR_FRAMES : isBestia ? BESTIA_FRAMES : isExplorador ? EXPLORADOR_FRAMES : isGigante ? GIGANTE_FRAMES : TOTAL_FRAMES;
+      const maxFrames = isCazador ? CAZADOR_FRAMES : isBestia ? BESTIA_FRAMES : isExplorador ? EXPLORADOR_FRAMES : isGigante ? GIGANTE_FRAMES : isHechicero ? HECHICERO_FRAMES : TOTAL_FRAMES;
       if (cur < maxFrames - 1) {
         cur++;
         setFrameIndex(cur);
@@ -196,6 +203,20 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
     (sovereignPixel && sovereignPixel.x < toPixel.x) ||
     (fromPixel && fromPixel.x > toPixel.x);
 
+  // Dynamic 3-Move rotation per turn for Hechicero (HE): 1 -> 2 -> 3 -> 1 -> 2 -> 3
+  const hechiceroVariation: 1 | 2 | 3 =
+    clash.variation ??
+    ((((Math.abs(Math.round(clash.toPixel.x * 7 + clash.toPixel.y * 13))) % 3) + 1) as 1 | 2 | 3);
+
+  const hechiceroSheet =
+    hechiceroVariation === 1 ? HECHICERO_VAR1_B64 :
+    hechiceroVariation === 2 ? HECHICERO_VAR2_B64 :
+    HECHICERO_VAR3_B64;
+
+  const hechiceroShouldFlip =
+    (sovereignPixel && sovereignPixel.x < toPixel.x) ||
+    (fromPixel && fromPixel.x > toPixel.x);
+
   return (
     <g key={clash.id} pointerEvents="none" className="select-none z-50">
       <defs>
@@ -233,10 +254,10 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
         </clipPath>
         <clipPath id="hechicero-frame-clip">
           <rect
-            x={-HECHICERO_HALF_SIZE}
-            y={-HECHICERO_HALF_SIZE}
-            width={HECHICERO_RENDER_SIZE}
-            height={HECHICERO_RENDER_SIZE}
+            x={-HECHICERO_HALF_WIDTH}
+            y={-HECHICERO_HALF_HEIGHT - 20}
+            width={HECHICERO_RENDER_WIDTH}
+            height={HECHICERO_RENDER_HEIGHT + 40}
           />
         </clipPath>
         <clipPath id="nigromante-frame-clip">
@@ -335,6 +356,33 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
             x2={midX}
             y2={midY}
             stroke="#fbbf24"
+            strokeWidth="2"
+            strokeDasharray="6 6"
+            strokeLinecap="round"
+            opacity={0.7}
+          />
+        </g>
+      )}
+      {attackerType === 'HE' && fromPixel && frameIndex < 8 && (
+        <g>
+          <line
+            x1={fromPixel.x}
+            y1={fromPixel.y}
+            x2={midX}
+            y2={midY}
+            stroke="#eab308"
+            strokeWidth="3.5"
+            strokeDasharray="14 7"
+            strokeLinecap="round"
+            opacity={frameIndex < 4 ? 0.9 : 0.5}
+            filter="drop-shadow(0 0 8px rgba(234, 179, 8, 0.8))"
+          />
+          <line
+            x1={fromPixel.x}
+            y1={fromPixel.y}
+            x2={midX}
+            y2={midY}
+            stroke="#ef4444"
             strokeWidth="2"
             strokeDasharray="6 6"
             strokeLinecap="round"
@@ -563,51 +611,50 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
         );
       })()}
 
-      {/* 7. Astral Mirror & Radiant Runic Prism Cage for Hechicero (HE) */}
+      {/* 7. Ultra-Modern Aristocratic Sorcerer for Hechicero (HE) - 3 Dynamic Combat Moves */}
       {attackerType === 'HE' && (
         <g transform={`translate(${midX}, ${midY})`}>
-          {/* Luminous Astral Halo Ring during Frame 7 Climax */}
-          {frameIndex === 6 && (
+          {/* Luminous Neon-Yellow & Neon-Red Astral Runic Ground Shockwave on Climax Impact (Frames 14-18) */}
+          {(frameIndex >= 14 && frameIndex <= 18) && (
             <g>
               <ellipse
                 cx="0"
-                cy="60"
-                rx="76"
-                ry="30"
+                cy="62"
+                rx={frameIndex === 15 ? 88 : 66}
+                ry={frameIndex === 15 ? 32 : 24}
                 fill="none"
-                stroke="#c084fc"
-                strokeWidth="2.5"
-                opacity="0.85"
-                filter="drop-shadow(0 0 16px rgba(168, 85, 247, 0.95))"
+                stroke="#eab308"
+                strokeWidth={frameIndex === 15 ? '3.5' : '2'}
+                opacity={frameIndex === 15 ? 0.95 : 0.6}
+                filter="drop-shadow(0 0 14px rgba(234, 179, 8, 0.95))"
               />
               <circle
                 cx="0"
-                cy="-45"
-                r="55"
+                cy="62"
+                r={frameIndex === 15 ? 50 : 34}
                 fill="none"
-                stroke="#facc15"
-                strokeWidth="1.5"
-                strokeDasharray="8 6"
-                opacity="0.75"
-                filter="drop-shadow(0 0 12px rgba(250, 204, 21, 0.9))"
+                stroke="#ef4444"
+                strokeWidth="2.5"
+                opacity={frameIndex === 15 ? 0.9 : 0.5}
+                filter="drop-shadow(0 0 10px rgba(239, 68, 68, 0.9))"
               />
             </g>
           )}
-          <g clipPath="url(#hechicero-frame-clip)">
-            <image
-              href={HECHICERO_SPRITESHEET_B64}
-              xlinkHref={HECHICERO_SPRITESHEET_B64}
-              x={-HECHICERO_HALF_SIZE - frameIndex * HECHICERO_RENDER_SIZE}
-              y={-HECHICERO_HALF_SIZE}
-              width={HECHICERO_RENDER_SIZE * TOTAL_FRAMES}
-              height={HECHICERO_RENDER_SIZE}
-              style={{
-                opacity: 1,
-                imageRendering: 'auto',
-                filter:
-                  'drop-shadow(0 0 18px rgba(168, 85, 247, 0.95)) drop-shadow(0 0 40px rgba(234, 179, 8, 0.65)) contrast(1.15) brightness(1.1)',
-              }}
-            />
+          <g transform={hechiceroShouldFlip ? 'scale(-1, 1)' : undefined}>
+            <g clipPath="url(#hechicero-frame-clip)">
+              <image
+                href={hechiceroSheet}
+                xlinkHref={hechiceroSheet}
+                x={-HECHICERO_HALF_WIDTH - frameIndex * HECHICERO_RENDER_WIDTH}
+                y={-HECHICERO_HALF_HEIGHT}
+                width={HECHICERO_RENDER_WIDTH * HECHICERO_FRAMES}
+                height={HECHICERO_RENDER_HEIGHT}
+                style={{
+                  opacity: 1,
+                  imageRendering: 'auto',
+                }}
+              />
+            </g>
           </g>
         </g>
       )}

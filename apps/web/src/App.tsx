@@ -55,6 +55,7 @@ export const App: React.FC = () => {
   const bestiaMoveCounter = useRef(0);
   const exploradorMoveCounter = useRef(0);
   const giganteMoveCounter = useRef(0);
+  const hechiceroMoveCounter = useRef(0);
 
   const checkSovereignClash = (action: Action, prevState: GameState, nextState: GameState): ComicClashEvent | null => {
     if (
@@ -87,6 +88,9 @@ export const App: React.FC = () => {
     } else if (actingPieceType === 'GI') {
       giganteMoveCounter.current += 1;
       variation = (((giganteMoveCounter.current - 1) % 3) + 1) as 1 | 2 | 3;
+    } else if (actingPieceType === 'HE') {
+      hechiceroMoveCounter.current += 1;
+      variation = (((hechiceroMoveCounter.current - 1) % 3) + 1) as 1 | 2 | 3;
     }
 
     const destPixel = hexToPixel(destCoord, HEX_SIZE);
@@ -167,16 +171,19 @@ export const App: React.FC = () => {
     // - Bestia jump move (BS)
     // - Gigante (GI): climbing onto a stack (ClimbStack), descending (DescendStack), or moving (MovePiece)
     // - Explorador (EX): rapid scout glide (MovePiece)
+    // - Hechicero (HE): modern light grimoire deployment (MovePiece, ClimbStack, DescendStack)
     const isSpecializedMove =
       (action.type === 'MovePiece' && (action.moveKind === 'cz' || action.moveKind === 'bs')) ||
       (actingPieceType === 'GI' && (action.type === 'ClimbStack' || action.type === 'DescendStack' || action.type === 'MovePiece')) ||
-      (actingPieceType === 'EX' && action.type === 'MovePiece');
+      (actingPieceType === 'EX' && action.type === 'MovePiece') ||
+      (actingPieceType === 'HE' && (action.type === 'MovePiece' || action.type === 'ClimbStack' || action.type === 'DescendStack'));
 
     if (isSpecializedMove) {
       if (actingPieceType === 'CZ') sounds.playSwordSlash();
       else if (actingPieceType === 'BS') sounds.playBeastClaw();
       else if (actingPieceType === 'EX') sounds.playWindCyclone();
       else if (actingPieceType === 'GI') sounds.playGiantStomp();
+      else if (actingPieceType === 'HE') sounds.playMystic();
 
       return {
         id: `${Date.now()}-${destCoord.q},${destCoord.r}`,
@@ -224,6 +231,8 @@ export const App: React.FC = () => {
             sounds.playGiantStomp();
           } else if (remoteType === 'EX') {
             sounds.playWindCyclone();
+          } else if (remoteType === 'HE') {
+            sounds.playMystic();
           } else {
             sounds.playSlide();
           }
@@ -406,6 +415,8 @@ export const App: React.FC = () => {
           sounds.playGiantStomp();
         } else if (actingType === 'EX') {
           sounds.playWindCyclone();
+        } else if (actingType === 'HE') {
+          sounds.playMystic();
         } else {
           sounds.playSlide();
         }
