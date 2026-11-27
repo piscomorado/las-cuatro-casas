@@ -53,6 +53,7 @@ export const App: React.FC = () => {
   const [logoExpanded, setLogoExpanded] = useState(false);
   const cazadorMoveCounter = useRef(0);
   const bestiaMoveCounter = useRef(0);
+  const exploradorMoveCounter = useRef(0);
 
   const checkSovereignClash = (action: Action, prevState: GameState, nextState: GameState): ComicClashEvent | null => {
     if (action.type !== 'MovePiece' && action.type !== 'PlacePiece') return null;
@@ -64,7 +65,7 @@ export const App: React.FC = () => {
       actingPieceType = prevState.pieces[action.pieceId]!.type;
     }
 
-    // Turn-by-turn rotation for Cazador 3 moves (1 -> 2 -> 3 -> 1 -> 2 -> 3)
+    // Turn-by-turn rotation for multi-move pieces (1 -> 2 -> 3 -> 1 -> 2 -> 3)
     let variation: 1 | 2 | 3 | undefined;
     if (actingPieceType === 'CZ') {
       cazadorMoveCounter.current += 1;
@@ -72,6 +73,9 @@ export const App: React.FC = () => {
     } else if (actingPieceType === 'BS') {
       bestiaMoveCounter.current += 1;
       variation = (((bestiaMoveCounter.current - 1) % 3) + 1) as 1 | 2 | 3;
+    } else if (actingPieceType === 'EX') {
+      exploradorMoveCounter.current += 1;
+      variation = (((exploradorMoveCounter.current - 1) % 3) + 1) as 1 | 2 | 3;
     }
 
     const destPixel = hexToPixel(destCoord, HEX_SIZE);

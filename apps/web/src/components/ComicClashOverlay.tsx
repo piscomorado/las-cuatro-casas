@@ -5,7 +5,11 @@ import {
   CAZADOR_VAR2_B64,
   CAZADOR_VAR3_B64,
 } from '../assets/vfx/cazador_b64';
-import { EXPLORADOR_SPRITESHEET_B64 } from '../assets/vfx/explorador_b64';
+import {
+  EXPLORADOR_VAR1_B64,
+  EXPLORADOR_VAR2_B64,
+  EXPLORADOR_VAR3_B64,
+} from '../assets/vfx/explorador_b64';
 import {
   BESTIA_VAR1_B64,
   BESTIA_VAR2_B64,
@@ -36,8 +40,7 @@ export interface ComicClashOverlayProps {
 const TOTAL_FRAMES = 12;
 const CAZADOR_FRAMES = 30;
 const BESTIA_FRAMES = 30;
-const FRAME_RENDER_SIZE = 195; // Calibrated to reach halfway into surrounding adjacent hexes
-const HALF_SIZE = FRAME_RENDER_SIZE / 2;
+const EXPLORADOR_FRAMES = 30;
 const CAZADOR_RENDER_WIDTH = 298; // Calibrated 16:9 ratio covering piece and reaching into adjacent hexes
 const CAZADOR_RENDER_HEIGHT = 168; // Calibrated height to cover piece and reach halfway into surrounding adjacent hexes
 const CAZADOR_HALF_WIDTH = CAZADOR_RENDER_WIDTH / 2;
@@ -46,6 +49,10 @@ const BESTIA_RENDER_WIDTH = 298; // Calibrated 16:9 ratio covering piece and rea
 const BESTIA_RENDER_HEIGHT = 168; // Calibrated height to cover piece and reach halfway into surrounding adjacent hexes
 const BESTIA_HALF_WIDTH = BESTIA_RENDER_WIDTH / 2;
 const BESTIA_HALF_HEIGHT = BESTIA_RENDER_HEIGHT / 2;
+const EXPLORADOR_RENDER_WIDTH = 298; // Calibrated 16:9 ratio covering piece and reaching into adjacent hexes
+const EXPLORADOR_RENDER_HEIGHT = 168; // Calibrated height to cover piece and reach halfway into surrounding adjacent hexes
+const EXPLORADOR_HALF_WIDTH = EXPLORADOR_RENDER_WIDTH / 2;
+const EXPLORADOR_HALF_HEIGHT = EXPLORADOR_RENDER_HEIGHT / 2;
 const GIGANTE_RENDER_SIZE = 285; // Colossal Runic Obsidian War Hammer presence
 const GIGANTE_HALF_SIZE = GIGANTE_RENDER_SIZE / 2;
 const HECHICERO_RENDER_SIZE = 275; // Astral Mirror & Runic Prism Cage presence
@@ -74,6 +81,7 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
     // Natural rhythm with dedicated slow-motion holds for each piece type:
     const isCazador = clash.attackerType === 'CZ';
     const isBestia = clash.attackerType === 'BS';
+    const isExplorador = clash.attackerType === 'EX';
     const isGigante = clash.attackerType === 'GI';
     const isHechicero = clash.attackerType === 'HE';
     const isNigromante = clash.attackerType === 'NI';
@@ -81,6 +89,8 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
       ? Array(30).fill(38) // Silky-smooth 26fps continuous video timing (38ms per frame, 100% fluid with zero mid-motion stutter)
       : isBestia
       ? Array(30).fill(38) // Silky-smooth 26fps continuous video timing for Bestia (38ms per frame, 100% fluid)
+      : isExplorador
+      ? Array(30).fill(38) // Silky-smooth 26fps continuous video timing for Angelic Explorador (38ms per frame, 100% fluid)
       : isGigante
       ? [100, 120, 130, 100, 90, 120, 340, 260, 160, 100, 80, 70]
       : isHechicero
@@ -92,7 +102,7 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
     let timerId: any;
 
     const advance = () => {
-      const maxFrames = isCazador ? CAZADOR_FRAMES : isBestia ? BESTIA_FRAMES : TOTAL_FRAMES;
+      const maxFrames = isCazador ? CAZADOR_FRAMES : isBestia ? BESTIA_FRAMES : isExplorador ? EXPLORADOR_FRAMES : TOTAL_FRAMES;
       if (cur < maxFrames - 1) {
         cur++;
         setFrameIndex(cur);
@@ -150,6 +160,20 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
     (sovereignPixel && sovereignPixel.x < toPixel.x) ||
     (fromPixel && fromPixel.x > toPixel.x);
 
+  // Dynamic 3-Move rotation per turn for Explorador (EX): 1 -> 2 -> 3 -> 1 -> 2 -> 3
+  const exploradorVariation: 1 | 2 | 3 =
+    clash.variation ??
+    ((((Math.abs(Math.round(clash.toPixel.x * 7 + clash.toPixel.y * 13))) % 3) + 1) as 1 | 2 | 3);
+
+  const exploradorSheet =
+    exploradorVariation === 1 ? EXPLORADOR_VAR1_B64 :
+    exploradorVariation === 2 ? EXPLORADOR_VAR2_B64 :
+    EXPLORADOR_VAR3_B64;
+
+  const exploradorShouldFlip =
+    (sovereignPixel && sovereignPixel.x < toPixel.x) ||
+    (fromPixel && fromPixel.x > toPixel.x);
+
   return (
     <g key={clash.id} pointerEvents="none" className="select-none z-50">
       <defs>
@@ -163,10 +187,10 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
         </clipPath>
         <clipPath id="explorador-frame-clip">
           <rect
-            x={-HALF_SIZE}
-            y={-HALF_SIZE}
-            width={FRAME_RENDER_SIZE}
-            height={FRAME_RENDER_SIZE}
+            x={-EXPLORADOR_HALF_WIDTH}
+            y={-EXPLORADOR_HALF_HEIGHT - 20}
+            width={EXPLORADOR_RENDER_WIDTH}
+            height={EXPLORADOR_RENDER_HEIGHT + 40}
           />
         </clipPath>
         <clipPath id="bestia-frame-clip">
@@ -270,17 +294,17 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
         </g>
       )}
 
-      {/* 2. Expanding Geometric Impact Ring during Climax (Frames 6-7) for Explorador */}
-      {attackerType === 'EX' && (frameIndex === 6 || frameIndex === 7) && (
+      {/* 2. Expanding Geometric Impact Ring during Climax (Frames 12-16) for Explorador */}
+      {attackerType === 'EX' && (frameIndex >= 12 && frameIndex <= 16) && (
         <g transform={`translate(${midX}, ${midY})`}>
           <circle
             cx="0"
             cy="0"
-            r={frameIndex === 6 ? 72 : 96}
+            r={frameIndex === 14 ? 88 : 64}
             fill="none"
             stroke="#fde047"
             strokeWidth="2.5"
-            opacity={frameIndex === 6 ? 0.75 : 0.35}
+            opacity={frameIndex === 14 ? 0.85 : 0.45}
           />
         </g>
       )}
@@ -331,23 +355,49 @@ export const ComicClashOverlay: React.FC<ComicClashOverlayProps> = ({ clash, onA
         </g>
       )}
 
-      {/* 4. Harmonized Gold & Feather 12-Frame Zephyr Cyclone for Explorador */}
+      {/* 4. Angelic Armored Winged Scout for Explorador (EX) - 3 Dynamic Combat Moves */}
       {attackerType === 'EX' && (
         <g transform={`translate(${midX}, ${midY})`}>
-          <g clipPath="url(#explorador-frame-clip)">
-            <image
-              href={EXPLORADOR_SPRITESHEET_B64}
-              xlinkHref={EXPLORADOR_SPRITESHEET_B64}
-              x={-HALF_SIZE - frameIndex * FRAME_RENDER_SIZE}
-              y={-HALF_SIZE}
-              width={FRAME_RENDER_SIZE * TOTAL_FRAMES}
-              height={FRAME_RENDER_SIZE}
-              style={{
-                opacity: 1,
-                imageRendering: 'auto',
-                filter: 'drop-shadow(0 0 10px rgba(245, 158, 11, 0.4))',
-              }}
-            />
+          {/* Luminous Gold & Amber Ground Shockwave on Climax Impact (Frames 12-16) */}
+          {(frameIndex >= 12 && frameIndex <= 16) && (
+            <g>
+              <ellipse
+                cx="0"
+                cy="54"
+                rx={frameIndex === 14 ? 64 : 46}
+                ry={frameIndex === 14 ? 24 : 18}
+                fill="none"
+                stroke="#f59e0b"
+                strokeWidth={frameIndex === 14 ? '3.5' : '2'}
+                opacity={frameIndex === 14 ? 0.95 : 0.6}
+              />
+              <circle
+                cx="0"
+                cy="54"
+                r={frameIndex === 14 ? 38 : 26}
+                fill="none"
+                stroke="#fde047"
+                strokeWidth={frameIndex === 14 ? '2.5' : '1.5'}
+                opacity={frameIndex === 14 ? 0.9 : 0.5}
+              />
+            </g>
+          )}
+          <g transform={exploradorShouldFlip ? 'scale(-1, 1)' : undefined}>
+            <g clipPath="url(#explorador-frame-clip)">
+              <image
+                href={exploradorSheet}
+                xlinkHref={exploradorSheet}
+                x={-EXPLORADOR_HALF_WIDTH - frameIndex * EXPLORADOR_RENDER_WIDTH}
+                y={-EXPLORADOR_HALF_HEIGHT}
+                width={EXPLORADOR_RENDER_WIDTH * EXPLORADOR_FRAMES}
+                height={EXPLORADOR_RENDER_HEIGHT}
+                style={{
+                  opacity: 1,
+                  imageRendering: 'auto',
+                  filter: 'drop-shadow(0 0 10px rgba(245, 158, 11, 0.4))',
+                }}
+              />
+            </g>
           </g>
         </g>
       )}
